@@ -1,0 +1,78 @@
+<div style="margin: 40px auto; padding: 20px; border: 2px solid #000; width: 600px; border-radius: 10px; background-color: #f9f9f9;">
+  <form method="get" action="">
+    <table>
+      <tr>
+        <td><label for="fname">First Name :</label></td>
+        <td><input type="text" id="fname" name="fname"></td>
+      </tr>
+      <tr>
+        <td><label for="lname">Last Name :</label></td>
+        <td><input type="text" id="lname" name="lname"></td>
+      </tr>
+      <tr>
+        <td><label for="email">E-Mail :</label></td>
+        <td><input type="email" id="email" name="email"></td>
+      </tr>
+      <tr>
+        <td><label for="pno">Phone No. :</label></td>
+        <td><input type="tel" id="pno" name="pno"></td>
+      </tr>
+      <tr>
+        <td><label for="add">Address :</label></td>
+        <td>
+          <input type="text" id="add" name="add">
+          &nbsp; City:
+          <select name="city" id="city">
+            <option value="">Your City</option>
+            <option value="Agra">Agra</option>
+            <option value="Delhi">Delhi</option>
+            <option value="Banglore">Banglore</option>
+            <option value="Gurgaon">Gurgaon</option>
+            <option value="Noida">Noida</option>
+          </select>
+        </td>
+      </tr>
+      <tr>
+        <td><label>Gender :</label></td>
+        <td>
+          <input type="radio" id="male" name="gen" value="Male">
+          <label for="male">Male</label>
+          <input type="radio" id="female" name="gen" value="Female">
+          <label for="female">Female</label>
+        </td>
+      </tr>
+      <tr>
+        <td><label>Blood Group :</label></td>
+        <td>
+          <input type="radio" id="a+" name="bg" value="A+"><label for="a+">A+</label>
+          <input type="radio" id="b+" name="bg" value="B+"><label for="b+">B+</label>
+          <input type="radio" id="ab+" name="bg" value="AB+"><label for="ab+">AB+</label>
+          <input type="radio" id="o+" name="bg" value="O+"><label for="o+">O+</label>
+        </td>
+      </tr>
+      <tr>
+        <td></td>
+        <td>
+          <input type="radio" id="a-" name="bg" value="A-"><label for="a-">A-</label>
+          <input type="radio" id="b-" name="bg" value="B-"><label for="b-">B-</label>
+          <input type="radio" id="ab-" name="bg" value="AB-"><label for="ab-">AB-</label>
+          <input type="radio" id="o-" name="bg" value="O-"><label for="o-">O-</label>
+        </td>
+      </tr>
+      <tr>
+        <td><label for="com">Comments :</label></td>
+        <td><textarea name="com" id="com" rows="3" cols="40"></textarea></td>
+      </tr>
+      <tr>
+        <td></td>
+        <td>
+          <input type="checkbox" id="check" name="check">
+          <label for="check">I agree to share my details.</label>
+        </td>
+      </tr>
+
+      <label for="">Submit</label>
+      <input type="submit" value="submit">
+    </table>
+  </form>
+</div>
