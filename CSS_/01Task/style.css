@@ -1,0 +1,93 @@
+/* CSS universal selector wala */
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing: border-box;
+}
+
+body{
+    padding: 30px 0;
+    font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+    background-color: #cfdef3;
+}
+
+table{
+    width: 90%;
+    margin:  auto;
+    background-color: white;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    border: none;
+}
+
+thead{
+    background: linear-gradient(to right, #657eea, #764ba2);
+    color: white;
+    text-align: left;
+    padding: 30px 20px;
+    
+}
+
+thead h2{
+    text-align: left;
+    font-size: 30px;
+    margin-bottom: 10px;
+}
+
+thead p{
+    text-align: left;
+    color: white;
+    font-size: 15px;   
+}
+thead a{
+    color: #eae17d;
+}
+
+thead a:hover {
+  text-decoration: underline;
+  color: blue;
+}
+
+
+
+th{
+    background-color: #657eea;
+    color: #fff;
+    padding: 15px;
+    font-size: 16px;
+    letter-spacing: 1px;
+    text-decoration: underline;
+
+}
+
+ul{
+    margin-top: 10px;
+    padding-left: 30px;
+    font-size: 14px;
+}
+
+li{
+    
+    margin-top: 10px;
+    padding-left: 10px;
+    font-size: 14px;
+}
+
+p{
+    margin-top: 10px;
+    margin-bottom: 10px;
+    line-height: 1.5;
+    font-size: 14px;
+    
+}
+
+
+  td{
+    padding: 10px;
+  }
+
+  #skillwala{
+    background-color: #e6e6fa;
+  }
