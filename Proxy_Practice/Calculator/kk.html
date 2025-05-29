@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            text-align: center;
+        }
+        .cal {
+            margin: 0 auto;
+            width: 400px;
+            padding: 20px;
+            background: #fff;
+            border-radius: 15px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+        }
+        .display {
+            width: 90%;
+            padding: 15px;
+            margin-bottom: 15px;
+            font-size: 20px;
+            border-radius: 10px;
+        }
+        table {
+            margin: 0 auto;
+        }
+        button {
+            width: 80px;
+            height: 60px;
+            font-size: 16px;
+            margin: 5px;
+            border-radius: 10px;
+            border: none;
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        h1 {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Calculator</h1>
+
+    <div class="cal">
+        <input type="text" class="display" id="result" readonly placeholder="Let's calculate">
+
+        <table>
+            <tr>
+                <td><button onclick="appendValue('1')">1</button></td>
+                <td><button onclick="appendValue('2')">2</button></td>
+                <td><button onclick="appendValue('3')">3</button></td>
+                <td><button onclick="appendValue('+')">+<br>Add</button></td>
+            </tr>
+            <tr>
+                <td><button onclick="appendValue('4')">4</button></td>
+                <td><button onclick="appendValue('5')">5</button></td>
+                <td><button onclick="appendValue('6')">6</button></td>
+                <td><button onclick="appendValue('-')">-<br>Minus</button></td>
+            </tr>
+            <tr>
+                <td><button onclick="appendValue('7')">7</button></td>
+                <td><button onclick="appendValue('8')">8</button></td>
+                <td><button onclick="appendValue('9')">9</button></td>
+                <td><button onclick="appendValue('/')">/<br>Divide</button></td>
+            </tr>
+            <tr>
+                <td><button onclick="clearDisplay()">Clear</button></td>
+                <td><button onclick="appendValue('0')">0</button></td>
+                <td><button onclick="deleteLast()">DEL</button></td>
+                <td><button onclick="appendValue('*')">*<br>Multiply</button></td>
+            </tr>
+            <tr>
+                <td><button onclick="checkPrime()">Prime?</button></td>
+                <td><button onclick="calculateFactorial()">Factorial</button></td>
+                <td colspan="2"><button onclick="calculate()">=</button></td>
+            </tr>
+        </table>
+    </div>
+
+    <script>
+        function appendValue(val) {
+            document.getElementById("result").value += val;
+        }
+
+        function clearDisplay() {
+            document.getElementById("result").value = '';
+        }
+
+        function deleteLast() {
+            let current = document.getElementById("result").value;
+            document.getElementById("result").value = current.slice(0, -1);
+        }
+
+        function calculate() {
+            try {
+                let expression = document.getElementById("result").value;
+                let result = eval(expression);
+                document.getElementById("result").value = result;
+            } catch {
+                document.getElementById("result").value = "Error";
+            }
+        }
+
+        function checkPrime() {
+            let num = parseInt(document.getElementById("result").value);
+            if (isNaN(num)) {
+                document.getElementById("result").value = "Invalid input";
+                return;
+            }
+
+            if (num < 2) {
+                document.getElementById("result").value = "Not Prime";
+                return;
+            }
+
+            for (let i = 2; i <= Math.sqrt(num); i++) {
+                if (num % i === 0) {
+                    document.getElementById("result").value = "Not Prime";
+                    return;
+                }
+            }
+
+            document.getElementById("result").value = "Prime";
+        }
+
+        function calculateFactorial() {
+            let num = parseInt(document.getElementById("result").value);
+            if (isNaN(num) || num < 0) {
+                document.getElementById("result").value = "Invalid input";
+                return;
+            }
+
+            let fact = 1;
+            for (let i = 2; i <= num; i++) {
+                fact *= i;
+            }
+            document.getElementById("result").value = fact;
+        }
+    </script>
+
+</body>
+</html>

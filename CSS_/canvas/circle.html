@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+
+    <canvas id="can" width="300" height="200" style=" border: 2px solid black;background-color: aliceblue;" ></canvas>
+
+
+    <script>
+        var canvas = document.getElementById('can');
+        var ctx=canvas.getContext("2d");
+        ctx.beginPath();
+        ctx.arc(95,50,40,0,2*Math.PI);
+         ctx.fillStyle = 'yellow'; 
+         ctx.fill();
+        ctx.stroke();
+        
+    </script>
+</body>
+</html>
