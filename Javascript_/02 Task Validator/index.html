@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Numeric Input Validation</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f2f5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 100px;
+    }
+    input[type="text"] {
+      padding: 10px;
+      width: 250px;
+      border: 2px solid #ccc;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+    button {
+      padding: 10px 20px;
+      margin-top: 10px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    #message {
+      margin-top: 15px;
+      font-weight: bold;
+    }
+    .error {
+      color: red;
+    }
+    .success {
+      color: green;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Numeric Input Validation</h2>
+  <input type="text" id="numericInput" placeholder="Enter numeric value">
+  <button onclick="validateInput()">Validate</button>
+  <div id="message"></div>
+
+  <script>
+    function validateInput() {
+      const input = document.getElementById('numericInput').value;
+      const message = document.getElementById('message');
+      message.className = ''; // Reset message class
+
+      if (!/^\d+$/.test(input)) {
+        message.textContent = "Only numeric characters are allowed!";
+        message.classList.add('error');
+      } else if (input.length <= 5 || input.length >= 15) {
+        message.textContent = "Length must be more than 5 and less than 15!";
+        message.classList.add('error');
+      } else {
+        message.textContent = "Valid input!";
+        message.classList.add('success');
+      }
+    }
+  </script>
+
+</body>
+</html>

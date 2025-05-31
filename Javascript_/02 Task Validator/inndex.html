@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Validator</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Background Iframe Video -->
+  <div class="bg-iframe-wrapper">
+   <iframe
+  class="bg-iframe"
+  src="https://www.youtube.com/embed/LFOx-vmYrts?autoplay=1&mute=1&loop=1&playlist=LFOx-vmYrts&controls=0&showinfo=0&modestbranding=1"
+  frameborder="0"
+  allow="autoplay; encrypted-media"
+  allowfullscreen
+></iframe>
+
+  </div>
+
+  <!-- Heading -->
+  <h1>Validator</h1>
+
+  <!-- Validation Box -->
+  <div class="container">
+    <div class="box">
+      <input type="text" id="numericInput" placeholder="Enter number" />
+      <button onclick="validateInput()">Validate</button>
+      <p id="message"></p>
+    </div>
+  </div>
+
+  <!-- JavaScript -->
+  <script>
+    function validateInput() {
+      const input = document.getElementById('numericInput').value;
+      const message = document.getElementById('message');
+      message.className = '';
+
+      if (!/^\d+$/.test(input)) {
+        message.textContent = "Only numeric characters are allowed!";
+        message.classList.add('error');
+      } else if (input.length <= 5 || input.length >= 15) {
+        message.textContent = "Length must be more than 5 and less than 15!";
+        message.classList.add('error');
+      } else {
+        message.textContent = "Valid input!";
+        message.classList.add('success');
+      }
+    }
+  </script>
+
+</body>
+</html>

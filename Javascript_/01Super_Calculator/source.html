@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Calculator ka Source Code</title>
+  <style>
+    body {
+      background-image: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)),
+      url('https://imgs.search.brave.com/QxIgWX4M4TChtDAqThQVmYT8VyB3zAqwf8MdNH44vmo/rs:fit:500:0:0:0/g:ce/aHR0cHM6Ly9tZWRp/YS5pc3RvY2twaG90/by5jb20vaWQvMTM2/ODkyODA2OS9waG90/by9iZWF1dGlmdWwt/c3VucmlzZS1vdmVy/LXNub3d5LWZvcmVz/dC13aXRoLWFuLWVw/aWMtbWlsa3ktd2F5/LW9uLXRoZS1za3ku/anBnP3M9NjEyeDYx/MiZ3PTAmaz0yMCZj/PUZjMngxd3pMNE1J/ZmtfdEl2MTc4Qkls/dUFDVFRBcE5EeWZW/MmNGQ0Y3TzQ9'); 
+      background-size: cover;
+      background-repeat: no-repeat;
+      background-position: center;
+      color: aliceblue;
+      font-family: monospace;
+      padding: 20px;
+    }
+
+    pre {
+      /* background-color: linear-gradient(rgba(0, 0, 0, 0.3), rgba(216, 200, 25, 0.3)), */
+      padding: 20px;
+      border-radius: 10px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+    }
+
+    a {
+      color: #ffd700;
+      font-size: 18px;
+      text-decoration: underline;
+    }
+
+    h1 {
+      margin-top: 0;
+      text-shadow: 1px 1px 2px #000;
+      color: orange;
+    }
+  </style>
+</head>
+<body>
+  <a href="calci.html">← Back to Calculator</a>
+  <h1>Calculator Source Code</h1>
+<fieldset>
+  <pre><code>
+    
+    HTML CODE
+    
+    &lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+    &lt;meta charset="UTF-8"&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+    &lt;title&gt>Document&lt;/title&gt;
+    &lt;link rel="stylesheet" href="calci.css"&gt;
+&lt;/head&gt;
+&lt;body&gt;
+
+    &lt;a href="calci.html" target="_blank"&gt;
+        &lt;h1 style="text-align: center; text-decoration:underline; color: rgb(245, 228, 115); font-size: 20px;"&gt;
+            Mera - Calculator
+        &lt;/h1&gt;
+    &lt;/a&gt;
+
+    &lt;div class="cal"&gt;
+        &lt;table&gt;
+            &lt;input type="text" class="display" id="result" readonly style="width: 370px; border-radius: 30px; overflow: hidden; border: solid 8px; color: rgb(38, 10, 97);" placeholder="chalo calculate karte hai...."&gt;
+
+            &lt;tr&gt;
+                &lt;td&gt;&lt;button onclick="appendValue('1')"&gt;1&lt;/button&gt;&lt;/td&gt;
+                &lt;td&gt;&lt;button onclick="appendValue('2')"&gt;2&lt;/button&gt;&lt;/td&gt;
+                &lt;td&gt;&lt;button onclick="appendValue('3')"&gt;3&lt;/button&gt;&lt;/td&gt;
+                &lt;td&gt;&lt;button onclick="appendValue('+')"&gt;Add &lt;br&gt; (+)&lt;/button&gt;&lt;/td&gt;
+            &lt;/tr&gt;
+
+            &lt;tr&gt;
+                &lt;td&gt;&lt;button onclick="appendValue('4')"&gt;4&lt;/button&gt;&lt;/td&gt;
+                &lt;td&gt;&lt;button onclick="appendValue('5')"&gt;5&lt;/button&gt;&lt;/td&gt;
+                &lt;td&gt;&lt;button onclick="appendValue('6')"&gt;6&lt;/button&gt;&lt;/td&gt;
+                &lt;td&gt;&lt;button onclick="appendValue('-')"&gt;Minus &lt;br&gt; (-)&lt;/button&gt;&lt;/td&gt;
+            &lt;/tr&gt;
+
+            &lt;tr&gt;
+                &lt;td&gt;&lt;button onclick="appendValue('7')"&gt;7&lt;/button&gt;&lt;/td&gt;
+                &lt;td&gt;&lt;button onclick="appendValue('8')"&gt;8&lt;/button&gt;&lt;/td&gt;
+                &lt;td&gt;&lt;button onclick="appendValue('9')"&gt;9&lt;/button&gt;&lt;/td&gt;
+                &lt;td&gt;&lt;button onclick="appendValue('/')"&gt;Divide &lt;br&gt; (/)&lt;/button&gt;&lt;/td&gt;
+            &lt;/tr&gt;
+
+            &lt;tr&gt;
+                &lt;td&gt;&lt;button onclick="clearDisplay()"&gt;Clear&lt;/button&gt;&lt;/td&gt;
+                &lt;td&gt;&lt;button onclick="appendValue('0')"&gt;0&lt;/button&gt;&lt;/td&gt;
+                &lt;td&gt;&lt;button onclick="deleteLast()"&gt;DEL&lt;/button&gt;&lt;/td&gt;
+                &lt;td&gt;&lt;button onclick="appendValue('*')"&gt;Multiply &lt;br&gt; (*)&lt;/button&gt;&lt;/td&gt;
+            &lt;/tr&gt;
+
+            &lt;tr&gt;
+                &lt;td&gt;&lt;button onclick="checkPrime()"&gt;Prime?&lt;/button&gt;&lt;/td&gt;
+                &lt;td&gt;&lt;button onclick="calculateFactorial()"&gt;Factorial&lt;/button&gt;&lt;/td&gt;
+                &lt;td colspan="2"&gt;&lt;button onclick="calculate()"&gt;=&lt;/button&gt;&lt;/td&gt;
+            &lt;/tr&gt;
+        &lt;/table&gt;
+    &lt;/div&gt;
+
+
+    --------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+    JAVASCRIPT CODE
+
+    &lt;script&gt;
+        function appendValue(val) {
+            document.getElementById("result").value += val;
+        }
+
+        function clearDisplay() {
+            document.getElementById("result").value = '';
+        }
+
+        function deleteLast() {
+            let val = document.getElementById("result").value;
+            document.getElementById("result").value = val.slice(0, -1);
+        }
+
+        function calculate() {
+            try {
+                document.getElementById("result").value = eval(document.getElementById("result").value);
+            } catch {
+                document.getElementById("result").value = "Error";
+            }
+        }
+
+        function checkPrime() {
+            let n = parseInt(document.getElementById("result").value);
+            if (isNaN(n)) {
+                document.getElementById("result").value = "Invalid input";
+                return;
+            }
+            let isPrime = true;
+            if (n <= 1) isPrime = false;
+            for (let i = 2; i <= n / 2; i++) {
+                if (n % i === 0) {
+                    isPrime = false;
+                    break;
+                }
+            }
+            document.getElementById("result").value = isPrime ? "Prime Number" : "Not a Prime";
+        }
+
+        function calculateFactorial() {
+            let n = parseInt(document.getElementById("result").value);
+            if (isNaN(n) || n < 0) {
+                document.getElementById("result").value = "Invalid input";
+                return;
+            }
+            let fact = 1;
+            for (let i = 2; i <= n; i++) {
+                fact *= i;
+            }
+            document.getElementById("result").value = fact;
+        }
+    &lt;/script&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+CSS CODE
+
+        .cal {
+            width: 400px;
+            margin: 50px auto;
+            border: 2px solid #333;
+            padding: 10px;
+            border-radius: 10px;
+             background: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)),
+             url("https://media.gettyimages.com/id/
+             1255610084/photo/endless-lavender-field-in-provence-france.
+             jpg?s=612x612&w=0&k=20&c=Vli6wi5MsFzEh-2ElsoY_VI9W
+             gje6ERGPetVeRu9gzU=");
+           
+        }
+        .display {
+            width: 100%;
+            height: 50px;
+            font-size: 24px;
+            text-align: right;
+            margin-bottom: 10px;
+            padding: 10px;
+        }
+        table {
+            width: 100%;
+            border: solid;
+            color: azure;
+        
+        }
+        td {
+             width: 25%; 
+             height: 60px; 
+            text-align: center;
+            vertical-align: middle;
+        }
+        button {
+            width: 100%;
+            height: 100%;
+            font-size: 20px;
+        }
+
+        button{
+             background: linear-gradient(to right, #00c6ff, #0072ff);
+             color: aliceblue;
+             border: none;
+             border-radius: 15px;
+             cursor: pointer;
+        }
+
+        button:hover{
+             background: linear-gradient(to right, #ab33ad, #ff3700);
+            transform: scale(1.05);
+            color: greenyellow;
+        }
+
+       body {
+    background: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)),
+                url("https://media.gettyimages.com/id/1185556807/photo/
+                background-abstract-misty-mountain-range-colourful-wallpaper-digital
+                -art-gradiant-pastel.jpg?s=612x612&w=0&k=20&c=mA8JYW5unrut4Iz
+                fpoZZOvugNk2CNb8Xb8NxQYvIY00=");
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+
+#result {
+    background: linear-gradient(rgba(234, 121, 121, 0.5), rgba(237, 220, 220, 0.5)),
+              url("https://media.gettyimages.com/id/1255610084/photo/
+              endless-lavender-field-in-provence-france.jpg");
+}
+
+
+
+
+</code></pre>
+
+
+</fieldset>
+</body>
+</html>
