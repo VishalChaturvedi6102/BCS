@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>User Registration</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Background Iframe  wali video, activated when tab query is applied-->
+  <div class="bg-iframe-wrapper">
+    <iframe
+      class="bg-iframe"
+      src="https://www.youtube.com/embed/LFOx-vmYrts?autoplay=1&mute=1&loop=1&playlist=LFOx-vmYrts&controls=0&showinfo=0&modestbranding=1"
+      frameborder="0"
+      allow="autoplay; encrypted-media"
+      allowfullscreen
+    ></iframe>
+  </div>
+
+  
+  <h1>User Validator</h1>
+
+  <!-- Registration Box -->
+  <div class="container">
+    <div class="box">
+      <input type="text" id="username" placeholder="Username" />
+      <p class="message" id="userMsg"></p>
+
+      <input type="email" id="email" placeholder="Email" />
+      <p class="message" id="emailMsg"></p>
+
+      <div style="display: flex; gap: 5px; width: 80%;">
+        <select id="countryCode">
+          <option value="+91">+91 (India)</option>
+          <option value="+1">+1 (USA)</option>
+          <option value="+44">+44 (UK)</option>
+          <option value="+81">+81 (Japan)</option>
+          <option value="+61">+61 (Australia)</option>
+        </select>
+        <input type="text" id="phone" placeholder="Phone Number" />
+      </div>
+      <p class="message" id="phoneMsg"></p>
+
+      <input type="number" id="age" placeholder="Age" />
+      <p class="message" id="ageMsg"></p>
+
+      <input type="password" id="password" placeholder="Password" />
+      <p class="message" id="passMsg"></p>
+
+      <button onclick="validateForm()">VALIDATOR</button>
+    </div>
+  </div>
+
+  <script>
+    function showMsg(id, msg, isSuccess) {
+      const el = document.getElementById(id);
+      el.innerText = msg;
+      el.style.color = isSuccess ? "green" : "red";
+    }
+
+    function validateForm() {
+      const username = document.getElementById("username").value.trim();
+      const email = document.getElementById("email").value.trim();
+      const phone = document.getElementById("phone").value.trim();
+      const age = document.getElementById("age").value.trim();
+      const password = document.getElementById("password").value;
+
+      let isValid = true;
+
+      // Username
+      if (username === "") {
+        showMsg("userMsg", "Username is required!", false);
+        isValid = false;
+      } else if (!/^[a-zA-Z0-9]+$/.test(username)) {
+        showMsg("userMsg", "Invalid username! No special characters allowed.", false);
+        isValid = false;
+      } else {
+        showMsg("userMsg", "Valid username", true);
+      }
+
+      // Email
+      if (email === "") {
+        showMsg("emailMsg", "Email is required!", false);
+        isValid = false;
+      } else if (!/^\S+@\S+\.\S+$/.test(email)) {
+        showMsg("emailMsg", "Invalid email address!", false);
+        isValid = false;
+      } else {
+        showMsg("emailMsg", "Valid email", true);
+      }
+
+      // Phone
+      if (phone === "") {
+        showMsg("phoneMsg", "Phone number is required!", false);
+        isValid = false;
+      } else if (!/^\d{10}$/.test(phone)) {
+        showMsg("phoneMsg", "Phone must be 10 digits!", false);
+        isValid = false;
+      } else {
+        showMsg("phoneMsg", "Valid phone number", true);
+      }
+
+      // Age
+      if (age === "") {
+        showMsg("ageMsg", "Age is required!", false);
+        isValid = false;
+      } else if (isNaN(age) || parseInt(age) <= 18) {
+        showMsg("ageMsg", "Age must be above 18!", false);
+        isValid = false;
+      } else {
+        showMsg("ageMsg", "Valid age", true);
+      }
+
+      // Password
+      if (password === "") {
+        showMsg("passMsg", "Password is required!", false);
+        isValid = false;
+      } else if (!/^(?=.*[a-zA-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(password)) {
+        showMsg("passMsg", "Password must have 8+ chars, 1 letter, 1 number & 1 special char!", false);
+        isValid = false;
+      } else {
+        showMsg("passMsg", "Strong password", true);
+      }
+
+      // Redirect if everything is valid
+      if (isValid) {
+        window.location.href = "animation/index.html"; // ✅ Change path as needed
+      }
+    }
+  </script>
+
+</body>
+</html>
