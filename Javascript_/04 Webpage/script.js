@@ -27,4 +27,4 @@ function showNextImage() {
 }
 
 // time setting image slide show ke liye
-setInterval(showNextImage, 3000); s
+setInterval(showNextImage, 300); s
