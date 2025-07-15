@@ -94,7 +94,7 @@ body {
   border-radius: 8px;
 
   
-}
+} 
 
 /* Footer */
 footer {
@@ -111,6 +111,8 @@ footer {
   flex: 1 1 30%;
   min-width: 250px;
 }
+  
+
 
 /* Responsive */
 @media (max-width: 768px) {
