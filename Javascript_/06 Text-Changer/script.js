@@ -18,3 +18,5 @@ changeTextBtn.addEventListener('click', () => {
     messageIndex = (messageIndex + 1) % messages.length;
 });
 
+
+
