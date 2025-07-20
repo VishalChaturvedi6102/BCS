@@ -35,6 +35,9 @@ document.addEventListener('DOMContentLoaded', () => {
         todoInput.focus(); 
     }
 
+
+    
+
     
     addButton.addEventListener('click', addTodoItem);
     todoInput.addEventListener('keypress', (event) => {
