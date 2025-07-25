@@ -1,11 +1,11 @@
 
-
 document.addEventListener('DOMContentLoaded', () => {
     const todoInput = document.getElementById('todoInput');
     const addButton = document.getElementById('addButton');
     const todoList = document.getElementById('todoList');
 
    
+
     function addTodoItem() {
         const todoText = todoInput.value.trim(); 
 
@@ -26,6 +26,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         
+
+
         listItem.querySelector('.delete-button').addEventListener('click', () => {
             todoList.removeChild(listItem); 
         });
@@ -34,10 +36,6 @@ document.addEventListener('DOMContentLoaded', () => {
         todoInput.value = ''; 
         todoInput.focus(); 
     }
-
-
-    
-
     
     addButton.addEventListener('click', addTodoItem);
     todoInput.addEventListener('keypress', (event) => {
