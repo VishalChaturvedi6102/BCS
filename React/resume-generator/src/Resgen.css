@@ -1,0 +1,40 @@
+
+*{
+    
+}
+.just{
+
+    background: linear-gradient(to left, #dcdcf9, #e6a1f9);
+    border: 2px solid;
+    border-radius: 30px;
+    margin-left: 20px;
+     margin-right: 20px;
+    margin-top: 10px;
+}
+
+
+.justice{
+    background: linear-gradient(to right, #dcdcf9, #e6a1f9);
+    border: 2px solid;
+    border-radius: 30px;
+    margin-left: 20px;
+     margin-right: 20px;
+    margin-top: 10px
+}
+
+
+
+
+.just, .justice {
+  flex: 1;
+  padding: 20px;
+  border: 2px solid;
+  border-radius: 30px;
+  margin: 10px;
+  box-sizing: border-box;
+}
+.container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
