@@ -9,6 +9,7 @@
 //   );
 // };
 
+
 // export default Fun;
 
 // // yeah componet 1 se component 2 ko data transfer ka method hai through props.
