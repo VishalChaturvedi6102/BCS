@@ -27,6 +27,8 @@ class DefMain extends Component {
               </Link>
             </li> 
             {/*  */}
+
+            
             <li>
               <Link to="/contact" style={styles.link}>
               CONTACT
