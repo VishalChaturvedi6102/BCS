@@ -10,6 +10,7 @@ const resetButton = document.getElementById('reset-button');
 const messageElement = document.getElementById('message');
 const attemptsElement = document.getElementById('attempts');
 
+
 function initializeGame() {
     secretNumber = Math.floor(Math.random() * 100) + 1;
     attempts = 0;
@@ -23,6 +24,8 @@ function initializeGame() {
     resetButton.classList.add('hidden');
     guessInput.focus();
 }
+
+
 
 function checkGuess() {
     if (gameEnded) return;
