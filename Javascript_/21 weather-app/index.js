@@ -55,6 +55,7 @@ async function getWeatherData(cityValue) {
     weatherDataEl.querySelector(".description").textContent =
       "An error happened, please try again later";
 
+      
     weatherDataEl.querySelector(".details").innerHTML = "";
   }
 }
