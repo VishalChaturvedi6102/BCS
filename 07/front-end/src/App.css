@@ -1,0 +1,15 @@
+
+
+/* index.css or App.css */
+body, html {
+  margin: 0;
+  padding: 0;
+  background-color: #ffffff; /* pure white */
+  min-height: 100vh;
+  width: 100%;
+  overflow-x: hidden; /* avoid weird side scroll bars */
+}
+
+* {
+  box-sizing: border-box;
+}
