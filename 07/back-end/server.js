@@ -221,17 +221,7 @@ app.post("/loginT", (req, res) => {
 // Expects: { username, namer, oneline, about, lang, timezone, subjects, level, education, exp }
 app.post("/infoofteacher", async (req, res) => {
   try {
-    const {
-      username,
-      namer = null,
-      oneline = null,
-      about = null,
-      lang = null,
-      timezone = null,
-      subjects = null,
-      level = null,
-      education = null,
-      exp = null,
+    const { username, namer = null, oneline = null, about = null, lang = null, timezone = null, subjects = null, level = null, education = null,  exp = null,
     } = req.body;
 
     if (!username) return res.status(400).json({ message: "Username is required" });
@@ -615,194 +605,6 @@ app.get("/courses/subjects", async (req, res) => {
 
 
 // ---------------------------------------VIDEO CALL wala feature------------------------------------------------------------------------------ //
-// yeha hai mere WEBRTC ka code
-
-// const server = http.createServer(app);
-
-
-// const io = new Server(server, {
-//   cors:{
-//     origin: "http://localhost:3000",
-//     methods: ["GET", "POST"],
-//   },
-// });
-
-
-// // Handle WebRTC signaling
-// io.on("connection", (socket) => {
-//   console.log("New user connected:", socket.id);
-
-
-// // iss mera user koi bhi room ko join kar sakta hai
-// io.on("join-room", (roomId) => {
-//   socket.join(roomId);
-//   console.log(`User $ {socket.id} joined kiya hua  room: ${roomId}`);
-//   socket.to(roomId).emit("user-joinedddd", socket.id);
-
-// });
-
-// socket.on("offer", (data) =>{
-//   socket.to(data.roomId).emit("offer", {
-//     sdp: data.sdp,
-//     sender: socket.id,
-//     });  });
-
-// socket.on("answer", (data) =>{
-//   socket.to(data.roomId).emit("answer", {
-//     sdp:data.sdp,
-//     sender: socket.id,
-//   });   });
-
-// socket.on("ice-candidate", (data) =>{
-//   socket.to(data.roomId).emit("ice-candidate", {
-//     candidate: data.candidate,
-//     sender: socket.id,
-//   });   });
-
-
-//   // yeah jab mera disconnect ko handle hoga
-//   socket.on("disconnect", () =>{
-//     console.log("User disconnect hogayaaa", socket.id);
-//     socket.broadcast.emit("user-disconnected", socket.id);
-//   }); });
-
-
-// // yeah video ke routes hai
-// // yeah route mera ek ROOMID ko generate karega for my teachewr which will go to my student
-// const {v4: uuidv4} = require("uuid");
-
-// app.post("/start-call", rakshak, async (req, res) => {
-//   try{
-//     const{tutorUsername, studentUsername, bookingId} = req.body;
-//     if (!tutorUsername || !studentUsername || !bookingId) {
-//       return res.status(400).json({ message: "Missing data" });
-//     }
-// const roomId = uuidv4();  //yeah meri unique room id ko generate karega
-
-// await db.query("update bookings set roomId = ? where id = ?", [roomId, bookingId]);
-
-// return res.json({
-//   message:"Call start ho gayi",
-//   roomId,
-// });
-//   } catch (err){
-//     console.error("POST /start-call error:", err);
-//     return res.status(500).json({message: "Server ka error"});
-//   }
-// });
-
-// // yeah video call link ke liye meri studentId kpo fetch kareag
-
-// app.get("get-call/:bookingId", rakshak, async (req, res) =>{
-//   try{
-//     const {bookingId} = req.params;
-
-//     const [rows] = await db.query("select roomId from Bookings where id = ?", [bookingId]);
-
-//     if(rows.length === 0 || !rows[0].roomId){
-//       return res.status(404).json ({message: "no active call"});
-//     }
-
-//     return res.json({roomId: rows[0].roomId});
-//   }catch (err){
-//     console.error("GET /get-call error:", err);
-//     return res.status(500).json({message: "server error"});
-//   }
-// });
-
-
-
-
-
-
-
-// const onlineStudents = {}; // { username: socketId }
-
-// io.on("connection", (socket) => {
-//   console.log("New user connected:", socket.id);
-
-//   // Student announces online status
-//   socket.on("student-online", (username) => {
-//     onlineStudents[username] = socket.id;
-//   });
-
-//   socket.on("disconnect", () => {
-//     Object.keys(onlineStudents).forEach((user) => {
-//       if (onlineStudents[user] === socket.id) delete onlineStudents[user];
-//     });
-//     socket.broadcast.emit("user-disconnected", socket.id);
-//     console.log("User disconnected:", socket.id);
-//   });
-
-//   // WebRTC signaling
-//   socket.on("join-room", (roomId) => {
-//     socket.join(roomId);
-//     console.log(`User ${socket.id} joined room: ${roomId}`);
-//     socket.to(roomId).emit("user-joined", socket.id);
-//   });
-
-//   socket.on("offer", (data) => {
-//     socket.to(data.roomId).emit("offer", {
-//       sdp: data.sdp,
-//       sender: socket.id,
-//     });
-//   });
-
-//   socket.on("answer", (data) => {
-//     socket.to(data.roomId).emit("answer", {
-//       sdp: data.sdp,
-//       sender: socket.id,
-//     });
-//   });
-
-//   socket.on("ice-candidate", (data) => {
-//     socket.to(data.roomId).emit("ice-candidate", {
-//       candidate: data.candidate,
-//       sender: socket.id,
-//     });
-//   });
-// });
-
-// // -------------------- VIDEO CALL ROUTES --------------------
-// const { v4: uuidv4 } = require("uuid");
-
-// app.post("/start-call", rakshak, async (req, res) => {
-//   try {
-//     const { tutorUsername, studentUsername, bookingId } = req.body;
-//     if (!tutorUsername || !studentUsername || !bookingId) {
-//       return res.status(400).json({ message: "Missing data" });
-//     }
-
-//     const roomId = uuidv4();
-//     await db.query("UPDATE Bookings SET roomId = ? WHERE id = ?", [
-//       roomId,
-//       bookingId,
-//     ]);
-
-//     return res.json({ message: "Call started", roomId });
-//   } catch (err) {
-//     console.error("POST /start-call error:", err);
-//     return res.status(500).json({ message: "Server error" });
-//   }
-// });
-
-// app.get("/get-call/:bookingId", rakshak, async (req, res) => {
-//   try {
-//     const { bookingId } = req.params;
-//     const [rows] = await db.query("SELECT roomId FROM Bookings WHERE id = ?", [
-//       bookingId,
-//     ]);
-
-//     if (rows.length === 0 || !rows[0].roomId) {
-//       return res.status(404).json({ message: "No active call" });
-//     }
-
-//     return res.json({ roomId: rows[0].roomId });
-//   } catch (err) {
-//     console.error("GET /get-call error:", err);
-//     return res.status(500).json({ message: "Server error" });
-//   }
-// });
 
 
 
@@ -816,6 +618,281 @@ const io = new Server(server, {
     methods: ["GET", "POST"],
   },
 });
+
+
+
+
+
+const onlineStudents = {}; // { username: socketId }
+
+io.on("connection", (socket) => {
+  console.log(`🔌 New user connected: ${socket.id}`);
+
+  // 1️⃣ Student announces online status
+  socket.on("student-online", (username) => {
+    onlineStudents[username] = socket.id;
+    console.log(`✅ Student ${username} is online with socket ${socket.id}`);
+  });
+
+  // 2️⃣ Handle disconnects
+  socket.on("disconnect", () => {
+    for (const user in onlineStudents) {
+      if (onlineStudents[user] === socket.id) {
+        delete onlineStudents[user];
+        console.log(`❌ Student ${user} disconnected (${socket.id})`);
+        break;
+      }
+    }
+
+    // Notify others
+    socket.broadcast.emit("user-disconnected", socket.id);
+  });
+
+  // 3️⃣ WebRTC signaling
+  socket.on("join-room", (roomId) => {
+    socket.join(roomId);
+    console.log(`📢 User ${socket.id} joined room: ${roomId}`);
+    socket.to(roomId).emit("user-joined", socket.id);
+  });
+
+  socket.on("offer", ({ roomId, sdp }) => {
+    socket.to(roomId).emit("offer", { sdp, sender: socket.id });
+  });
+
+  socket.on("answer", ({ roomId, sdp }) => {
+    socket.to(roomId).emit("answer", { sdp, sender: socket.id });
+  });
+
+  socket.on("ice-candidate", ({ roomId, candidate }) => {
+    socket.to(roomId).emit("ice-candidate", { candidate, sender: socket.id });
+  });
+});
+
+
+
+
+// ----------------------- ROUTES -----------------------
+const { v4: uuidv4 } = require("uuid");
+
+// GET /bookings (teacher)
+app.get("/bookings", async (req, res) => {
+  try {
+    const { username } = req.query;
+    if (!username) return res.status(400).json({ message: "Tutor username is required" });
+
+    const sql = `
+      SELECT b.id, b.tutorUsername, b.studentUsername, b.start, b.end, b.status, b.roomId
+      FROM Bookings b
+      WHERE b.tutorUsername = ?
+      ORDER BY b.start ASC
+    `;
+    const [rows] = await db.query(sql, [username]);
+
+    // Attach studentSocketId
+    const bookingsWithSocket = rows.map((b) => ({
+      ...b,
+      studentSocketId: onlineStudents[b.studentUsername] || null,
+    }));
+
+    return res.json(bookingsWithSocket);
+  } catch (err) {
+    console.error("GET /bookings error:", err);
+    return res.status(500).json({ message: "Server error" });
+  }
+});
+
+// POST /start-call
+app.post("/start-call", async (req, res) => {
+  try {
+    const { tutorUsername, studentUsername, bookingId } = req.body;
+    if (!tutorUsername || !studentUsername || !bookingId) {
+      return res.status(400).json({ message: "Missing data" });
+    }
+
+    const roomId = uuidv4();
+    await db.query("UPDATE Bookings SET roomId = ? WHERE id = ?", [roomId, bookingId]);
+
+    // Notify student if online
+    const studentSocketId = onlineStudents[studentUsername];
+    if (studentSocketId) {
+      io.to(studentSocketId).emit("incoming-call", { roomId, tutorUsername, bookingId });
+    }
+
+    return res.json({ message: "Call started", roomId });
+  } catch (err) {
+    console.error("POST /start-call error:", err);
+    return res.status(500).json({ message: "Server error" });
+  }
+});
+
+// GET /get-call/:bookingId
+app.get("/get-call/:bookingId", rakshak, async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+    const [rows] = await db.query("SELECT roomId FROM Bookings WHERE id = ?", [bookingId]);
+
+    if (rows.length === 0 || !rows[0].roomId) {
+      return res.status(404).json({ message: "No active call" });
+    }
+
+    return res.json({ roomId: rows[0].roomId });
+  } catch (err) {
+    console.error("GET /get-call error:", err);
+    return res.status(500).json({ message: "Server error" });
+  }
+});
+
+
+
+// new frontend api access points
+// Add these endpoints to your server.js
+
+// Get recommended tutors (for dashboard)
+// Get recommended tutors (for dashboard)
+app.get('/api/tutors/recommended', async (req, res) => {
+  try {
+    // First, just get the basic teacher data without any complex joins
+    const [rows] = await db.query(`
+      SELECT * FROM teacherprofile 
+      ORDER BY id DESC 
+      LIMIT 8
+    `);
+    
+    // Format the response
+    const tutors = rows.map(tutor => ({
+      id: tutor.id,
+      name: tutor.namer,
+      username: tutor.username,
+      subject: tutor.subjects,
+      experience: tutor.exp,
+      rating: (4.5 + Math.random() * 0.5).toFixed(1),
+      reviews: Math.floor(Math.random() * 50) + 10,
+      hourlyRate: `₹${Math.floor(500 + Math.random() * 1500)}/hr`,
+      responseTime: ['1 hour', '2 hours', '3 hours', '4 hours'][Math.floor(Math.random() * 4)],
+      description: tutor.about || tutor.oneline || "Experienced tutor",
+      profileImage: `https://randomuser.me/api/portraits/${Math.random() > 0.5 ? 'men' : 'women'}/${Math.floor(Math.random() * 50)}.jpg`,
+      isOnline: Math.random() > 0.3,
+      lang: tutor.lang,
+      about: tutor.about,
+      education: tutor.education,
+      level: tutor.level
+    }));
+    
+    res.json(tutors);
+  } catch (err) {
+    console.error('GET /api/tutors/recommended error:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// Get tutors by language
+app.get('/api/tutors', async (req, res) => {
+  try {
+    const { lang } = req.query;
+    if (!lang) return res.status(400).json({ message: 'Language is required' });
+
+    const [rows] = await db.query(`
+      SELECT * FROM teacherprofile 
+      WHERE LOWER(lang) LIKE ? OR LOWER(subjects) LIKE ?
+      ORDER BY id DESC
+    `, [`%${lang.toLowerCase()}%`, `%${lang.toLowerCase()}%`]);
+    
+    const tutors = rows.map(tutor => ({
+      id: tutor.id,
+      name: tutor.namer,
+      username: tutor.username,
+      subject: tutor.subjects,
+      experience: tutor.exp,
+      rating: (4.5 + Math.random() * 0.5).toFixed(1),
+      reviews: Math.floor(Math.random() * 50) + 10,
+      hourlyRate: `₹${Math.floor(500 + Math.random() * 1500)}/hr`,
+      responseTime: ['1 hour', '2 hours', '3 hours', '4 hours'][Math.floor(Math.random() * 4)],
+      description: tutor.about || tutor.oneline || "Experienced tutor",
+      profileImage: `https://randomuser.me/api/portraits/${Math.random() > 0.5 ? 'men' : 'women'}/${Math.floor(Math.random() * 50)}.jpg`,
+      isOnline: Math.random() > 0.3,
+      lang: tutor.lang,
+      about: tutor.about,
+      education: tutor.education,
+      level: tutor.level,
+      oneline: tutor.oneline
+    }));
+    
+    res.json(tutors);
+  } catch (err) {
+    console.error('GET /api/tutors error:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// Get tutor by username
+app.get('/api/tutors/username/:username', async (req, res) => {
+  try {
+    const { username } = req.params;
+    
+    const [rows] = await db.query(`
+      SELECT * FROM teacherprofile 
+      WHERE username = ?
+    `, [username]);
+    
+    if (rows.length === 0) return res.status(404).json({ message: 'Tutor not found' });
+    
+    const tutor = rows[0];
+    const formattedTutor = {
+      id: tutor.id,
+      name: tutor.namer,
+      username: tutor.username,
+      subject: tutor.subjects,
+      experience: tutor.exp,
+      rating: (4.5 + Math.random() * 0.5).toFixed(1),
+      reviews: Math.floor(Math.random() * 50) + 10,
+      hourlyRate: `₹${Math.floor(500 + Math.random() * 1500)}/hr`,
+      responseTime: ['1 hour', '2 hours', '3 hours', '4 hours'][Math.floor(Math.random() * 4)],
+      description: tutor.about || tutor.oneline || "Experienced tutor",
+      profileImage: `https://randomuser.me/api/portraits/${Math.random() > 0.5 ? 'men' : 'women'}/${Math.floor(Math.random() * 50)}.jpg`,
+      isOnline: Math.random() > 0.3,
+      lang: tutor.lang,
+      about: tutor.about,
+      education: tutor.education,
+      level: tutor.level,
+      oneline: tutor.oneline,
+      timezone: tutor.timezone
+    };
+    
+    res.json(formattedTutor);
+  } catch (err) {
+    console.error('GET /api/tutors/username error:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+
+
+
+// fallback
+app.use((req, res) => {
+  res.status(404).json({ message: "Endpoint not found" });
+});
+
+// start
+server.listen(4000, () => {
+  console.log("Server running on port 4000");
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 // const onlineStudents = {}; // { username: socketId }
@@ -969,136 +1046,6 @@ const io = new Server(server, {
 
 
 
-const onlineStudents = {}; // { username: socketId }
-
-io.on("connection", (socket) => {
-  console.log(`🔌 New user connected: ${socket.id}`);
-
-  // 1️⃣ Student announces online status
-  socket.on("student-online", (username) => {
-    onlineStudents[username] = socket.id;
-    console.log(`✅ Student ${username} is online with socket ${socket.id}`);
-  });
-
-  // 2️⃣ Handle disconnects
-  socket.on("disconnect", () => {
-    for (const user in onlineStudents) {
-      if (onlineStudents[user] === socket.id) {
-        delete onlineStudents[user];
-        console.log(`❌ Student ${user} disconnected (${socket.id})`);
-        break;
-      }
-    }
-
-    // Notify others
-    socket.broadcast.emit("user-disconnected", socket.id);
-  });
-
-  // 3️⃣ WebRTC signaling
-  socket.on("join-room", (roomId) => {
-    socket.join(roomId);
-    console.log(`📢 User ${socket.id} joined room: ${roomId}`);
-    socket.to(roomId).emit("user-joined", socket.id);
-  });
-
-  socket.on("offer", ({ roomId, sdp }) => {
-    socket.to(roomId).emit("offer", { sdp, sender: socket.id });
-  });
-
-  socket.on("answer", ({ roomId, sdp }) => {
-    socket.to(roomId).emit("answer", { sdp, sender: socket.id });
-  });
-
-  socket.on("ice-candidate", ({ roomId, candidate }) => {
-    socket.to(roomId).emit("ice-candidate", { candidate, sender: socket.id });
-  });
-});
 
 
-
-
-// ----------------------- ROUTES -----------------------
-const { v4: uuidv4 } = require("uuid");
-
-// GET /bookings (teacher)
-app.get("/bookings", async (req, res) => {
-  try {
-    const { username } = req.query;
-    if (!username) return res.status(400).json({ message: "Tutor username is required" });
-
-    const sql = `
-      SELECT b.id, b.tutorUsername, b.studentUsername, b.start, b.end, b.status, b.roomId
-      FROM Bookings b
-      WHERE b.tutorUsername = ?
-      ORDER BY b.start ASC
-    `;
-    const [rows] = await db.query(sql, [username]);
-
-    // Attach studentSocketId
-    const bookingsWithSocket = rows.map((b) => ({
-      ...b,
-      studentSocketId: onlineStudents[b.studentUsername] || null,
-    }));
-
-    return res.json(bookingsWithSocket);
-  } catch (err) {
-    console.error("GET /bookings error:", err);
-    return res.status(500).json({ message: "Server error" });
-  }
-});
-
-// POST /start-call
-app.post("/start-call", async (req, res) => {
-  try {
-    const { tutorUsername, studentUsername, bookingId } = req.body;
-    if (!tutorUsername || !studentUsername || !bookingId) {
-      return res.status(400).json({ message: "Missing data" });
-    }
-
-    const roomId = uuidv4();
-    await db.query("UPDATE Bookings SET roomId = ? WHERE id = ?", [roomId, bookingId]);
-
-    // Notify student if online
-    const studentSocketId = onlineStudents[studentUsername];
-    if (studentSocketId) {
-      io.to(studentSocketId).emit("incoming-call", { roomId, tutorUsername, bookingId });
-    }
-
-    return res.json({ message: "Call started", roomId });
-  } catch (err) {
-    console.error("POST /start-call error:", err);
-    return res.status(500).json({ message: "Server error" });
-  }
-});
-
-// GET /get-call/:bookingId
-app.get("/get-call/:bookingId", rakshak, async (req, res) => {
-  try {
-    const { bookingId } = req.params;
-    const [rows] = await db.query("SELECT roomId FROM Bookings WHERE id = ?", [bookingId]);
-
-    if (rows.length === 0 || !rows[0].roomId) {
-      return res.status(404).json({ message: "No active call" });
-    }
-
-    return res.json({ roomId: rows[0].roomId });
-  } catch (err) {
-    console.error("GET /get-call error:", err);
-    return res.status(500).json({ message: "Server error" });
-  }
-});
-
-
-
-
-
-// fallback
-app.use((req, res) => {
-  res.status(404).json({ message: "Endpoint not found" });
-});
-
-// start
-server.listen(4000, () => {
-  console.log("Server running on port 4000");
-});
-
+// --------------------------

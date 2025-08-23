@@ -1,0 +1,227 @@
+/*
+  This file contains the global CSS variables and styling
+  for the Superprof-like theme.
+*/
+
+/* Variable Declarations at the Root Level */
+:root {
+  --base-size: 8px;
+  --base-size-x8: calc(var(--base-size) * 8);
+  --base-size-x9: calc(var(--base-size) * 9);
+  --base-size-x10: calc(var(--base-size) * 10);
+  --base-color-white: #fff;
+  --base-color-black: #121212;
+  --base-color-black-medium: #3f3f3f;
+  --base-color-grey: #a6a6a6;
+  --base-color-grey-medium: #d9d9d9;
+  --base-color-grey-light: #f7f7f7;
+  --base-color-blue: #157dfe;
+  --base-color-blue-medium: #5ba4fe;
+  --base-color-blue-light: #add2ff;
+  --base-color-blue-extra-light: #e8f2ff;
+  --base-color-yellow: #ffcb3f;
+  --base-color-yellow-medium: #ffdb78;
+  --base-color-yellow-light: #ffedbc;
+  --base-color-yellow-extra-light: #fffbf0;
+  --base-color-pink: #ff6363;
+  --base-color-pink-medium: #ff9292;
+  --base-color-pink-light: #ffc8c8;
+  --base-color-pink-extra-light: #fff1f1;
+  --base-color-orange: #ffa25e;
+  --base-color-purple: #5d5dec;
+  --base-color-purple-extra-light: #eef;
+  --base-color-system-success: #5bca8d;
+  --base-color-system-success-light: #f2fbf6;
+  --base-color-system-warning: #ff3636;
+  --base-font-family: "Buenos Aires", "OpenSans", "Open Sans", sans-serif;
+}
+
+/* Global styles using the root variables */
+.superprof-theme {
+  font-family: var(--base-font-family);
+  background-color: var(--base-color-grey-light);
+  color: var(--base-color-black);
+}
+
+/* Navbar */
+.superprof-navbar {
+  background-color: var(--base-color-white);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Styling for the Sign Up button */
+.signup-button {
+  background-color: var(--base-color-pink);
+  border-color: var(--base-color-pink);
+  color: var(--base-color-white);
+  font-weight: 600;
+  transition: background-color 0.3s ease;
+}
+
+.signup-button:hover {
+  background-color: var(--base-color-pink-medium);
+  border-color: var(--base-color-pink-medium);
+}
+
+/* Hero Section */
+.hero-section {
+  padding-top: 10rem;
+  padding-bottom: 8rem;
+  text-align: center;
+}
+
+.hero-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--base-color-black);
+  margin-bottom: 0.5rem;
+}
+
+.hero-subtitle {
+  font-size: 1.25rem;
+  color: var(--base-color-grey);
+  margin-bottom: 2rem;
+}
+
+.hero-search-form {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.search-input {
+  border-radius: 50px;
+  padding: 1rem 2rem;
+  font-size: 1rem;
+  border: 1px solid var(--base-color-grey-medium);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.search-input:focus {
+  box-shadow: 0 0 0 0.25rem var(--base-color-blue-light);
+}
+
+.search-button {
+  position: absolute;
+  right: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-radius: 50px;
+  padding: 0.8rem 1.5rem;
+  background-color: var(--base-color-blue);
+  border-color: var(--base-color-blue);
+  transition: all 0.3s ease;
+}
+
+.search-button:hover {
+  background-color: var(--base-color-blue-medium);
+  border-color: var(--base-color-blue-medium);
+}
+
+/* General Headings */
+.superprof-heading {
+  font-weight: 700;
+  color: var(--base-color-black-medium);
+}
+
+/* Role Cards (Student/Teacher) */
+.role-card {
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  height: 100%;
+}
+
+.role-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+}
+
+.student-card .card-title {
+  color: var(--base-color-blue);
+}
+
+.teacher-card .card-title {
+  color: var(--base-color-system-success);
+}
+
+/* Features Section */
+.feature-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+  padding: 1.5rem;
+  background-color: var(--base-color-blue-extra-light);
+  border-radius: 12px;
+  box-shadow: 0 5px 15px var(--base-color-blue-light);
+  font-weight: 600;
+  color: var(--base-color-blue);
+}
+
+/* How It Works Section */
+.how-it-works-item {
+  padding: 2rem;
+  border-radius: 15px;
+  background-color: var(--base-color-white);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  transition: transform 0.3s ease;
+  height: 100%;
+}
+
+.how-it-works-item:hover {
+  transform: translateY(-10px);
+}
+
+.how-it-works-title {
+  font-weight: 700;
+  color: var(--base-color-black);
+}
+
+.step-number {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 45px;
+  height: 45px;
+  background-color: var(--base-color-yellow);
+  color: var(--base-color-black);
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+/* Testimonials */
+.testimonial-card {
+  border-radius: 15px;
+  border: none;
+  background-color: var(--base-color-white);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+}
+
+.testimonial-card p {
+  font-style: italic;
+  font-size: 1rem;
+  color: var(--base-color-grey);
+}
+
+.testimonial-card .blockquote-footer {
+  font-weight: 500;
+  color: var(--base-color-black);
+}
+
+/* Footer */
+.superprof-footer {
+  background-color: var(--base-color-black);
+  color: var(--base-color-grey);
+  text-align: center;
+  padding: 2rem 0;
+  font-size: 0.9rem;
+}
+
+/* Media Queries for responsiveness */
+@media (max-width: 768px) {
+  .hero-title {
+    font-size: 2rem;
+  }
+}
