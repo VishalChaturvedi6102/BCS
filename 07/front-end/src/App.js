@@ -126,6 +126,7 @@ import Titlewala from './Tcomponent/Titlewala';
 import Callpage from './Callpage';
 import StudentCallpage from './Studentcallpage';
 import Tutorcard from './Tutorcard';
+import VideoCallPage from './VideoCallPage';
 
 
 function App() {
@@ -147,6 +148,9 @@ function App() {
           <Route path="/newcourses" element={<Newcourses />} />
           <Route path="/student-call/:roomId" element={<StudentCallpage />} />
           <Route path="/tutorcard" element={<Tutorcard />} />
+
+          <Route path="/videocallpage" element={<VideoCallPage />} />
+
 
 
         </Route>

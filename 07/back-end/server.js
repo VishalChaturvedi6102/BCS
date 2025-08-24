@@ -13,6 +13,8 @@ const jwt_ka_secret = "abcekukh1323";
 // web rtc ke liye
 const {Server} = require("socket.io");
 const http = require("http");
+const path = require("path"); 
+const fs = require('fs');
 
 const app = express();
 app.use(cors());
@@ -219,38 +221,215 @@ app.post("/loginT", (req, res) => {
 
 // --------- TEACHER PROFILE (insert or update) ---------
 // Expects: { username, namer, oneline, about, lang, timezone, subjects, level, education, exp }
-app.post("/infoofteacher", async (req, res) => {
+// app.post("/infoofteacher", async (req, res) => {
+//   try {
+//     const { username, namer = null, oneline = null, about = null, lang = null, timezone = null, subjects = null, level = null, education = null,  exp = null,
+//     } = req.body;
+
+//     if (!username) return res.status(400).json({ message: "Username is required" });
+
+//     const [rows] = await db.query("SELECT * FROM teacherprofile WHERE username = ?", [username]);
+
+//     if (rows.length > 0) {
+//       // UPDATE
+//       const updateQuery = `
+//         UPDATE teacherprofile
+//         SET namer = ?, oneline = ?, about = ?, lang = ?, timezone = ?, subjects = ?, level = ?, education = ?, exp = ?
+//         WHERE username = ?
+//       `;
+//       await db.query(updateQuery, [namer, oneline, about, lang, timezone, subjects, level, education, exp, username,]);
+//       return res.json({ message: "Profile updated successfully" });
+//     } else {
+//       // INSERT
+//       const insertQuery = `
+//         INSERT INTO teacherprofile (username, namer, oneline, about, lang, timezone, subjects, level, education, exp)
+//         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+//       `;
+//       await db.query(insertQuery, [ username, namer, oneline, about, lang, timezone, subjects, level, education, exp, ]);
+//       return res.json({ message: "Profile created successfully" });
+//     }
+//   } catch (err) {
+//     console.error("infoofteacher error:", err);
+//     return res.status(500).json({ message: "Server error" });
+//   }
+// });
+
+
+
+
+// Expects: { username, namer, oneline, about, lang, timezone, subjects, level, education, exp, free_sessions, all_sessions_free }
+// Also handles profile_image file upload
+// Update your multer configuration to handle both profile images and syllabus files
+// Update your multer configuration to handle both profile images and syllabus files
+const teacherStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadsDir = path.join(__dirname, 'uploads');
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+    cb(null, 'uploads/');
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    if (file.fieldname === 'profile_image') {
+      cb(null, 'profile-' + uniqueSuffix + path.extname(file.originalname));
+    } else if (file.fieldname === 'syllabus') {
+      cb(null, 'syllabus-' + uniqueSuffix + path.extname(file.originalname));
+    } else {
+      cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+    }
+  }
+});
+
+const teacherUpload = multer({ 
+  storage: teacherStorage,
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB limit for both files
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.fieldname === 'profile_image' && file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else if (file.fieldname === 'syllabus' && file.mimetype === 'application/pdf') {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type'), false);
+    }
+  }
+});
+
+// Update your MySQL table to include syllabus field
+// Run this SQL command:
+// ALTER TABLE teacherprofile ADD COLUMN syllabus VARCHAR(255) NULL AFTER all_sessions_free;
+
+// Update your POST endpoint
+app.post("/infoofteacher", teacherUpload.fields([
+  { name: 'profile_image', maxCount: 1 },
+  { name: 'syllabus', maxCount: 1 }
+]), async (req, res) => {
   try {
-    const { username, namer = null, oneline = null, about = null, lang = null, timezone = null, subjects = null, level = null, education = null,  exp = null,
+    const {
+      username,
+      namer = null,
+      oneline = null,
+      about = null,
+      lang = null,
+      timezone = null,
+      subjects = null,
+      level = null,
+      education = null,
+      exp = null,
+      free_sessions = 0,
+      all_sessions_free = false
     } = req.body;
 
+    // Convert boolean values to numbers for MySQL
+    const allSessionsFree = all_sessions_free === 'true' || all_sessions_free === true ? 1 : 0;
+    const freeSessions = parseInt(free_sessions) || 0;
+
     if (!username) return res.status(400).json({ message: "Username is required" });
+
+    // Handle file uploads
+    let profileImage = null;
+    let syllabusFile = null;
+    
+    if (req.files) {
+      if (req.files['profile_image']) {
+        profileImage = req.files['profile_image'][0].filename;
+        
+        // Delete old profile image if it exists
+        const [existingRows] = await db.query("SELECT profile_image FROM teacherprofile WHERE username = ?", [username]);
+        if (existingRows.length > 0 && existingRows[0].profile_image) {
+          const oldImagePath = path.join(__dirname, 'uploads', existingRows[0].profile_image);
+          if (fs.existsSync(oldImagePath)) {
+            fs.unlinkSync(oldImagePath);
+          }
+        }
+      }
+      
+      if (req.files['syllabus']) {
+        syllabusFile = req.files['syllabus'][0].filename;
+        
+        // Delete old syllabus if it exists
+        const [existingRows] = await db.query("SELECT syllabus FROM teacherprofile WHERE username = ?", [username]);
+        if (existingRows.length > 0 && existingRows[0].syllabus) {
+          const oldSyllabusPath = path.join(__dirname, 'uploads', existingRows[0].syllabus);
+          if (fs.existsSync(oldSyllabusPath)) {
+            fs.unlinkSync(oldSyllabusPath);
+          }
+        }
+      }
+    }
 
     const [rows] = await db.query("SELECT * FROM teacherprofile WHERE username = ?", [username]);
 
     if (rows.length > 0) {
-      // UPDATE
-      const updateQuery = `
+      // UPDATE existing profile
+      let updateQuery = `
         UPDATE teacherprofile
-        SET namer = ?, oneline = ?, about = ?, lang = ?, timezone = ?, subjects = ?, level = ?, education = ?, exp = ?
-        WHERE username = ?
+        SET namer = ?, oneline = ?, about = ?, lang = ?, timezone = ?, 
+            subjects = ?, level = ?, education = ?, exp = ?, 
+            free_sessions = ?, all_sessions_free = ?
       `;
-      await db.query(updateQuery, [namer, oneline, about, lang, timezone, subjects, level, education, exp, username,]);
+      let queryParams = [
+        namer, oneline, about, lang, timezone, subjects, level, education, exp,
+        freeSessions, allSessionsFree
+      ];
+
+      // Add profile image to update if provided
+      if (profileImage) {
+        updateQuery += ", profile_image = ?";
+        queryParams.push(profileImage);
+      }
+      
+      // Add syllabus to update if provided
+      if (syllabusFile) {
+        updateQuery += ", syllabus = ?";
+        queryParams.push(syllabusFile);
+      }
+
+      updateQuery += " WHERE username = ?";
+      queryParams.push(username);
+
+      await db.query(updateQuery, queryParams);
       return res.json({ message: "Profile updated successfully" });
     } else {
-      // INSERT
+      // INSERT new profile
       const insertQuery = `
-        INSERT INTO teacherprofile (username, namer, oneline, about, lang, timezone, subjects, level, education, exp)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO teacherprofile 
+        (username, namer, oneline, about, lang, timezone, subjects, level, education, exp, profile_image, syllabus, free_sessions, all_sessions_free)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
-      await db.query(insertQuery, [ username, namer, oneline, about, lang, timezone, subjects, level, education, exp, ]);
+      await db.query(insertQuery, [
+        username, namer, oneline, about, lang, timezone, subjects, level, education, exp,
+        profileImage, syllabusFile, freeSessions, allSessionsFree
+      ]);
       return res.json({ message: "Profile created successfully" });
     }
   } catch (err) {
     console.error("infoofteacher error:", err);
-    return res.status(500).json({ message: "Server error" });
+    
+    // Clean up uploaded files if there was an error
+    if (req.files) {
+      if (req.files['profile_image']) {
+        const filePath = path.join(__dirname, 'uploads', req.files['profile_image'][0].filename);
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      }
+      if (req.files['syllabus']) {
+        const filePath = path.join(__dirname, 'uploads', req.files['syllabus'][0].filename);
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      }
+    }
+    
+    return res.status(500).json({ message: "Server error", error: err.message });
   }
 });
+
+// Add this to your server.js to serve uploaded images
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // --------- GET TEACHERS (by language/subject partial match) ---------
 // GET /api/teachers?lang=english
@@ -533,7 +712,7 @@ app.get("/api/courses/by-teacher/:username", async (req, res) => {
 
 // yeah hai mera new course creation course
 
-const path = require('path');
+// const path = require('path');
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -610,6 +789,141 @@ app.get("/courses/subjects", async (req, res) => {
 
 // ----------------------- SOCKET.IO & VIDEO CALL -----------------------
 
+// const server = http.createServer(app);
+
+// const io = new Server(server, {
+//   cors: {
+//     origin: "http://localhost:3000",
+//     methods: ["GET", "POST"],
+//   },
+// });
+
+
+
+
+
+// const onlineStudents = {}; // { username: socketId }
+
+// io.on("connection", (socket) => {
+//   console.log(`🔌 New user connected: ${socket.id}`);
+
+//   // 1️⃣ Student announces online status
+//   socket.on("student-online", (username) => {
+//     onlineStudents[username] = socket.id;
+//     console.log(`✅ Student ${username} is online with socket ${socket.id}`);
+//   });
+
+//   // 2️⃣ Handle disconnects
+//   socket.on("disconnect", () => {
+//     for (const user in onlineStudents) {
+//       if (onlineStudents[user] === socket.id) {
+//         delete onlineStudents[user];
+//         console.log(`❌ Student ${user} disconnected (${socket.id})`);
+//         break;
+//       }
+//     }
+
+//     // Notify others
+//     socket.broadcast.emit("user-disconnected", socket.id);
+//   });
+
+//   // 3️⃣ WebRTC signaling
+//   socket.on("join-room", (roomId) => {
+//     socket.join(roomId);
+//     console.log(`📢 User ${socket.id} joined room: ${roomId}`);
+//     socket.to(roomId).emit("user-joined", socket.id);
+//   });
+
+//   socket.on("offer", ({ roomId, sdp }) => {
+//     socket.to(roomId).emit("offer", { sdp, sender: socket.id });
+//   });
+
+//   socket.on("answer", ({ roomId, sdp }) => {
+//     socket.to(roomId).emit("answer", { sdp, sender: socket.id });
+//   });
+
+//   socket.on("ice-candidate", ({ roomId, candidate }) => {
+//     socket.to(roomId).emit("ice-candidate", { candidate, sender: socket.id });
+//   });
+// });
+
+
+
+
+// // ----------------------- ROUTES -----------------------
+// const { v4: uuidv4 } = require("uuid");
+
+// // GET /bookings (teacher)
+// app.get("/bookings", async (req, res) => {
+//   try {
+//     const { username } = req.query;
+//     if (!username) return res.status(400).json({ message: "Tutor username is required" });
+
+//     const sql = `
+//       SELECT b.id, b.tutorUsername, b.studentUsername, b.start, b.end, b.status, b.roomId
+//       FROM Bookings b
+//       WHERE b.tutorUsername = ?
+//       ORDER BY b.start ASC
+//     `;
+//     const [rows] = await db.query(sql, [username]);
+
+//     // Attach studentSocketId
+//     const bookingsWithSocket = rows.map((b) => ({
+//       ...b,
+//       studentSocketId: onlineStudents[b.studentUsername] || null,
+//     }));
+
+//     return res.json(bookingsWithSocket);
+//   } catch (err) {
+//     console.error("GET /bookings error:", err);
+//     return res.status(500).json({ message: "Server error" });
+//   }
+// });
+
+// // POST /start-call
+// app.post("/start-call", async (req, res) => {
+//   try {
+//     const { tutorUsername, studentUsername, bookingId } = req.body;
+//     if (!tutorUsername || !studentUsername || !bookingId) {
+//       return res.status(400).json({ message: "Missing data" });
+//     }
+
+//     const roomId = uuidv4();
+//     await db.query("UPDATE Bookings SET roomId = ? WHERE id = ?", [roomId, bookingId]);
+
+//     // Notify student if online
+//     const studentSocketId = onlineStudents[studentUsername];
+//     if (studentSocketId) {
+//       io.to(studentSocketId).emit("incoming-call", { roomId, tutorUsername, bookingId });
+//     }
+
+//     return res.json({ message: "Call started", roomId });
+//   } catch (err) {
+//     console.error("POST /start-call error:", err);
+//     return res.status(500).json({ message: "Server error" });
+//   }
+// });
+
+// // GET /get-call/:bookingId
+// app.get("/get-call/:bookingId", rakshak, async (req, res) => {
+//   try {
+//     const { bookingId } = req.params;
+//     const [rows] = await db.query("SELECT roomId FROM Bookings WHERE id = ?", [bookingId]);
+
+//     if (rows.length === 0 || !rows[0].roomId) {
+//       return res.status(404).json({ message: "No active call" });
+//     }
+
+//     return res.json({ roomId: rows[0].roomId });
+//   } catch (err) {
+//     console.error("GET /get-call error:", err);
+//     return res.status(500).json({ message: "Server error" });
+//   }
+// });
+
+
+
+
 const server = http.createServer(app);
 
 const io = new Server(server, {
@@ -619,36 +933,61 @@ const io = new Server(server, {
   },
 });
 
-
-
-
-
-const onlineStudents = {}; // { username: socketId }
+// Store online users
+const onlineTeachers = {};
+const onlineStudents = {};
 
 io.on("connection", (socket) => {
-  console.log(`🔌 New user connected: ${socket.id}`);
+  console.log("🔌 User connected:", socket.id);
 
-  // 1️⃣ Student announces online status
-  socket.on("student-online", (username) => {
-    onlineStudents[username] = socket.id;
-    console.log(`✅ Student ${username} is online with socket ${socket.id}`);
+  // Handle teacher online status
+  socket.on("teacher-online", (username) => {
+    console.log(`Teacher ${username} is online with socket ${socket.id}`);
+    onlineTeachers[username] = socket.id;
+    
+    // Broadcast to all students that this teacher is online
+    socket.broadcast.emit("teacher-online", { 
+      username, 
+      socketId: socket.id 
+    });
   });
 
-  // 2️⃣ Handle disconnects
+  // Handle student online status
+  socket.on("student-online", (username) => {
+    console.log(`Student ${username} is online with socket ${socket.id}`);
+    onlineStudents[username] = socket.id;
+    
+    // Broadcast to all teachers that this student is online
+    socket.broadcast.emit("student-online", { 
+      username, 
+      socketId: socket.id 
+    });
+  });
+
+  // Handle disconnections
   socket.on("disconnect", () => {
-    for (const user in onlineStudents) {
-      if (onlineStudents[user] === socket.id) {
-        delete onlineStudents[user];
-        console.log(`❌ Student ${user} disconnected (${socket.id})`);
+    console.log("❌ User disconnected:", socket.id);
+    
+    // Remove from online users
+    for (const username in onlineTeachers) {
+      if (onlineTeachers[username] === socket.id) {
+        delete onlineTeachers[username];
         break;
       }
     }
-
-    // Notify others
+    
+    for (const username in onlineStudents) {
+      if (onlineStudents[username] === socket.id) {
+        delete onlineStudents[username];
+        break;
+      }
+    }
+    
+    // Notify other users about this disconnection
     socket.broadcast.emit("user-disconnected", socket.id);
   });
 
-  // 3️⃣ WebRTC signaling
+  // WebRTC signaling events
   socket.on("join-room", (roomId) => {
     socket.join(roomId);
     console.log(`📢 User ${socket.id} joined room: ${roomId}`);
@@ -666,13 +1005,51 @@ io.on("connection", (socket) => {
   socket.on("ice-candidate", ({ roomId, candidate }) => {
     socket.to(roomId).emit("ice-candidate", { candidate, sender: socket.id });
   });
+
+  // Handle call initiation
+  socket.on("start-call", ({ tutorUsername, studentUsername, bookingId }) => {
+    const roomId = uuidv4();
+    const studentSocketId = onlineStudents[studentUsername];
+    
+    if (studentSocketId) {
+      // Notify student about incoming call
+      io.to(studentSocketId).emit("incoming-call", { 
+        roomId, 
+        tutorUsername, 
+        bookingId 
+      });
+      
+      // Notify teacher that call was initiated
+      socket.emit("call-started", { roomId });
+    } else {
+      // Notify teacher that student is offline
+      socket.emit("student-offline", { studentUsername });
+    }
+  });
+
+  // Handle call acceptance
+  socket.on("accept-call", ({ roomId, studentUsername }) => {
+    socket.join(roomId);
+    socket.to(roomId).emit("call-accepted", { studentUsername });
+  });
+
+  // Handle call rejection
+  socket.on("reject-call", ({ roomId, tutorUsername }) => {
+    const tutorSocketId = onlineTeachers[tutorUsername];
+    if (tutorSocketId) {
+      io.to(tutorSocketId).emit("call-rejected", { roomId });
+    }
+  });
+
+  // Handle ending a call
+  socket.on("end-call", ({ roomId }) => {
+    socket.to(roomId).emit("call-ended");
+    socket.leave(roomId);
+  });
 });
 
-
-
-
 // ----------------------- ROUTES -----------------------
-const { v4: uuidv4 } = require("uuid");
+// Make sure to import your database connection (db) and authentication middleware (rakshak)
 
 // GET /bookings (teacher)
 app.get("/bookings", async (req, res) => {
@@ -700,6 +1077,30 @@ app.get("/bookings", async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 });
+
+// POST /start-call
+// app.post("/start-call", async (req, res) => {
+//   try {
+//     const { tutorUsername, studentUsername, bookingId } = req.body;
+//     if (!tutorUsername || !studentUsername || !bookingId) {
+//       return res.status(400).json({ message: "Missing data" });
+//     }
+
+//     const roomId = uuidv4();
+//     await db.query("UPDATE Bookings SET roomId = ? WHERE id = ?", [roomId, bookingId]);
+
+//     // Notify student if online
+//     const studentSocketId = onlineStudents[studentUsername];
+//     if (studentSocketId) {
+//       io.to(studentSocketId).emit("incoming-call", { roomId, tutorUsername, bookingId });
+//     }
+
+//     return res.json({ message: "Call started", roomId });
+//   } catch (err) {
+//     console.error("POST /start-call error:", err);
+//     return res.status(500).json({ message: "Server error" });
+//   }
+// });
 
 // POST /start-call
 app.post("/start-call", async (req, res) => {
@@ -742,6 +1143,7 @@ app.get("/get-call/:bookingId", rakshak, async (req, res) => {
   }
 });
 
+module.exports = { server, io, onlineTeachers, onlineStudents };
 
 
 // new frontend api access points

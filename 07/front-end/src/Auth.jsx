@@ -136,12 +136,12 @@ const Auth = () => {
                     <div className="auth-toggle-container">
                         <div className="auth-toggle">
                             <div className="auth-toggle-panel auth-toggle-left">
-                                <h1 className='font-bold text-3xl'>Welcome Back!</h1>
+                                <h1 className='font-bold text-3xl'>Welcome Back Students!</h1>
                                 <p>Enter your personal details to use all of site features</p>
                                 <button id="login" onClick={handleSignIn}>Sign In</button>
                             </div>
                             <div className="auth-toggle-panel auth-toggle-right">
-                                <h1 className='font-bold text-3xl'>Hello, Friend!</h1>
+                                <h1 className='font-bold text-3xl'>Hiii Students!</h1>
                                 <p>Register with your personal details to use all of site features</p>
                                 <button id="register" onClick={() => setIsActive(true)}>Sign Up</button>
                             </div>

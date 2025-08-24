@@ -84,12 +84,12 @@ const Author = () => {
             <div className="toggle-container2">
                 <div className="toggle">
                     <div className="toggle-panel toggle-left">
-                        <h1 className='font-bold text-3xl'>Welcome Back!</h1>
+                        <h1 className='font-bold text-3xl'>Welcome Back Teachers!</h1>
                         <p>Enter your personal details to use all of site features</p>
                         <button className="" id="login" onClick={handleSignIn}>Sign In</button>
                     </div>
                     <div className="toggle-panel toggle-right">
-                        <h1 className='font-bold text-3xl'>Hello, Friend!</h1>
+                        <h1 className='font-bold text-3xl'>Be a Teacher!</h1>
                         <p>Register with your personal details to use all of site features</p>
                         <button className="" id="register" onClick={() => setIsActive(true)}>Sign Up</button>
                     </div>

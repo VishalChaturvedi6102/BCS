@@ -12,7 +12,9 @@ const Titlewala = () => {
   const handleLogout = () => {
     // Clear teacher session/localStorage and redirect to login
     localStorage.removeItem("teacherUsername");
-    navigate("/teacher/login");
+    sessionStorage.removeItem("tutorUsername");
+    sessionStorage.removeItem("token");
+    navigate("/");
   };
 
   return (
