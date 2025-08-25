@@ -126,7 +126,9 @@ import Titlewala from './Tcomponent/Titlewala';
 import Callpage from './Callpage';
 import StudentCallpage from './Studentcallpage';
 import Tutorcard from './Tutorcard';
-import VideoCallPage from './VideoCallPage';
+// import VideoCallPage from './VideoCallPage';
+import VideoCall from './VideoCall';
+import Call from './Call';
 
 
 function App() {
@@ -139,6 +141,8 @@ function App() {
         <Route path="/" element={<Frontpage />} />
         <Route path="/tutorshow" element={<Tutorshow />} />
 
+        <Route path="/call" element={<Call />} />
+
         {/* STUDENT private routes */}
         <Route element={<Privateroutes><Layout /></Privateroutes>}>
           <Route path="/dashboard" element={<Dashboard />} />
@@ -149,7 +153,10 @@ function App() {
           <Route path="/student-call/:roomId" element={<StudentCallpage />} />
           <Route path="/tutorcard" element={<Tutorcard />} />
 
-          <Route path="/videocallpage" element={<VideoCallPage />} />
+          {/* <Route path="/videocallpage" element={<VideoCallPage />} /> */}
+
+
+          <Route path="/video-call" element={<VideoCall />} />
 
 
 
