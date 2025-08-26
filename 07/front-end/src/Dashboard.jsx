@@ -760,12 +760,400 @@
 
 
 
+// import React, { useState, useEffect } from "react";
+// import { useNavigate } from "react-router-dom";
+// import { Container, Row, Col, Card, Table, Button, Spinner } from "react-bootstrap";
+// import axios from "axios";
+// import { socket } from "./socket"; 
+// import Tutorcard from "./Tutorcard"; // Make sure to create this component
+
+// const Dashboard = () => {
+//   const navigate = useNavigate();
+//   const lang = ["English", "Hindi", "French", "Japanese", "Chinese", "Spanish"];
+//   const [bookings, setBookings] = useState([]);
+//   const [recommendedTutors, setRecommendedTutors] = useState([]);
+//   const [loadingTutors, setLoadingTutors] = useState(true);
+//   const [loadingBookings, setLoadingBookings] = useState(true);
+
+//   // Fetch student bookings
+//   useEffect(() => {
+//     const token = sessionStorage.getItem("token");
+//     if (!token) {
+//       navigate("/");
+//       return;
+//     }
+    
+//     const studentUsername = sessionStorage.getItem("studentUsername");
+//     if (!studentUsername) return;
+
+//     setLoadingBookings(true);
+//     axios
+//       .get(`http://localhost:4000/student/bookings?username=${studentUsername}`, {
+//         headers: { Authorization: `Bearer ${token}` },
+//       })
+//       .then((res) => setBookings(res.data))
+//       .catch((err) => console.error(err))
+//       .finally(() => setLoadingBookings(false));
+//   }, [navigate]);
+
+//   // Fetch recommended tutors
+//   useEffect(() => {
+//     const fetchRecommendedTutors = async () => {
+//       try {
+//         const response = await axios.get('http://localhost:4000/api/tutors/recommended');
+//         setRecommendedTutors(response.data);
+//       } catch (error) {
+//         console.error('Error fetching tutors:', error);
+//       } finally {
+//         setLoadingTutors(false);
+//       }
+//     };
+
+//     fetchRecommendedTutors();
+//   }, []);
+
+//   useEffect(() => {
+//     const username = sessionStorage.getItem("studentUsername");
+//     if (username) socket.emit("student-online", username);
+//   }, []);
+
+//   return (
+//     <div style={{ 
+//       minHeight: "100vh", 
+//       background: "linear-gradient(to bottom, #FFFFFF 0%, #F8F9FA 100%)",
+//       fontFamily: "'Poppins', sans-serif"
+//     }}>
+//       <Container className="py-5">
+//         {/* Header Section */}
+//         <div className="text-center mb-5">
+//           <h1 style={{ 
+//             fontWeight: "700", 
+//             color: "#1F2937", 
+//             marginBottom: "1rem",
+//             fontSize: "2.5rem"
+//           }}>
+//             Welcome to Lang++
+//           </h1>
+//           <p style={{ 
+//             color: "#6B7280", 
+//             fontSize: "1.1rem",
+//             maxWidth: "600px",
+//             margin: "0 auto"
+//           }}>
+//             Discover expert tutors and begin your learning journey
+//           </p>
+//         </div>
+
+//         {/* Recommended Tutors Section */}
+//         <div className="mb-5">
+//           <h2 style={{ 
+//             fontWeight: "600", 
+//             color: "#1F2937", 
+//             marginBottom: "2rem",
+//             textAlign: "center"
+//           }}>
+//             ⭐ Recommended Tutors For You
+//           </h2>
+          
+//           {loadingTutors ? (
+//             <div className="text-center py-4">
+//               <Spinner animation="border" variant="primary" />
+//               <p className="mt-2 text-muted">Loading tutors...</p>
+//             </div>
+//           ) : (
+//             <Row xs={1} sm={2} md={3} lg={4} className="g-4">
+//               {recommendedTutors.map((tutor) => (
+//                 <Col key={tutor.id}>
+//                   <Tutorcard tutor={tutor} />
+//                 </Col>
+//               ))}
+//             </Row>
+    
+//           )}
+//         </div>
+
+//         {/* View All Tutors Button */}
+//         <div className="text-center my-5">
+//           <Button
+//             onClick={() => navigate("/all-tutors")}
+//             style={{
+//               backgroundColor: "black",
+//               color: "#006CFF",
+//               border: "2px solid #006CFF",
+//               borderRadius: "25px",
+//               padding: "0.75rem 2rem",
+//               fontWeight: "600",
+//               transition: "all 0.3s ease"
+//             }}
+//             onMouseEnter={(e) => {
+//               e.target.style.backgroundColor = "#006CFF";
+//               e.target.style.color = "white";
+//             }}
+//             onMouseLeave={(e) => {
+//               e.target.style.backgroundColor = "black";
+//               e.target.style.color = "#006CFF";
+//             }}
+//           >
+//             View All Tutors →
+//           </Button>
+//         </div>
+
+//         {/* Languages Section */}
+//         <div className="mb-5">
+//           <h2 style={{ 
+//             fontWeight: "600", 
+//             color: "#1F2937", 
+//             marginBottom: "2rem",
+//             textAlign: "center"
+//           }}>
+//             Popular Language Courses
+//           </h2>
+          
+//           <Row xs={1} sm={2} md={3} lg={3} className="g-4">
+//             {lang.map((language, index) => (
+//               <Col key={language}>
+//                 <Card
+//                   onClick={() => navigate(`/tutorwale/${language.toLowerCase()}`)}
+//                   className="h-100 text-center border-0"
+//                   style={{
+//                     cursor: "pointer",
+//                     transition: "all 0.3s ease",
+//                     backgroundColor: "white",
+//                     borderRadius: "12px",
+//                     boxShadow: "0 4px 6px rgba(0, 0, 0, 0.05)",
+//                   }}
+//                   onMouseEnter={(e) => {
+//                     e.currentTarget.style.transform = "translateY(-5px)";
+//                     e.currentTarget.style.boxShadow = "0 10px 25px rgba(0, 0, 0, 0.1)";
+//                   }}
+//                   onMouseLeave={(e) => {
+//                     e.currentTarget.style.transform = "translateY(0)";
+//                     e.currentTarget.style.boxShadow = "0 4px 6px rgba(0, 0, 0, 0.05)";
+//                   }}
+//                 >
+//                   <Card.Body className="d-flex flex-column justify-content-center align-items-center py-4">
+//                     <div style={{
+//                       width: "60px",
+//                       height: "60px",
+//                       borderRadius: "50%",
+//                       backgroundColor: "#faa1a1ff",
+//                       display: "flex",
+//                       alignItems: "center",
+//                       justifyContent: "center",
+//                       marginBottom: "1rem"
+//                     }}>
+//                       <span style={{ 
+//                         fontSize: "1.5rem", 
+//                         fontWeight: "700",
+//                         color: "#006CFF"
+//                       }}>
+//                         {language.charAt(0)}
+//                       </span>
+//                     </div>
+//                     <Card.Title style={{ 
+//                       fontWeight: "600", 
+//                       color: "#1F2937",
+//                       marginBottom: "0.5rem"
+//                     }}>
+//                       {language}
+//                     </Card.Title>
+//                     <p style={{ 
+//                       color: "#6B7280", 
+//                       fontSize: "0.9rem",
+//                       margin: 0
+//                     }}>
+//                       Expert {language} tutors
+//                     </p>
+//                   </Card.Body>
+//                 </Card>
+//               </Col>
+//             ))}
+//           </Row>
+//         </div>
+
+//         {/* Explore More Courses Button */}
+//         <div className="text-center my-5">
+//           <Button
+//             onClick={() => navigate("/newcourses")}
+//             style={{
+//               backgroundColor: "white",
+//               color: "#006CFF",
+//               border: "1px solid #006CFF",
+//               borderRadius: "25px",
+//               padding: "0.75rem 2rem",
+//               fontWeight: "600",
+//               transition: "all 0.3s ease"
+//             }}
+//             onMouseEnter={(e) => {
+//               e.target.style.backgroundColor = "#006CFF";
+//               e.target.style.color = "white";
+//             }}
+//             onMouseLeave={(e) => {
+//               e.target.style.backgroundColor = "white";
+//               e.target.style.color = "#006CFF";
+//             }}
+//           >
+//             Explore More Courses →
+//           </Button>
+//         </div>
+
+//         {/* Bookings Section */}
+//         <div className="mt-5">
+//           <div style={{
+//             backgroundColor: "white",
+//             borderRadius: "12px",
+//             padding: "2rem",
+//             boxShadow: "0 4px 6px rgba(0, 0, 0, 0.05)"
+//           }}>
+//             <h2 style={{ 
+//               fontWeight: "600", 
+//               color: "#1F2937", 
+//               marginBottom: "1.5rem",
+//               display: "flex",
+//               alignItems: "center",
+//               gap: "0.5rem"
+//             }}>
+//               <span style={{
+//                 backgroundColor: "#006CFF",
+//                 width: "24px",
+//                 height: "24px",
+//                 borderRadius: "6px",
+//                 display: "inline-flex",
+//                 alignItems: "center",
+//                 justifyContent: "center",
+//                 color: "white",
+//                 fontSize: "0.8rem"
+//               }}>📅</span>
+//               Your Bookings
+//             </h2>
+
+//             {loadingBookings ? (
+//               <div className="text-center py-4">
+//                 <Spinner animation="border" variant="primary" />
+//                 <p className="mt-2 text-muted">Loading bookings...</p>
+//               </div>
+//             ) : bookings.length === 0 ? (
+//               <div className="text-center py-4">
+//                 <p style={{ color: "#6B7280", marginBottom: "1rem" }}>
+//                   No bookings yet. Start by exploring our language courses!
+//                 </p>
+//                 <Button
+//                   onClick={() => navigate("/tutorwale/english")}
+//                   style={{
+//                     backgroundColor: "#FF7138",
+//                     border: "none",
+//                     borderRadius: "6px",
+//                     padding: "0.5rem 1.5rem",
+//                     fontWeight: "600"
+//                   }}
+//                 >
+//                   Find a Tutor
+//                 </Button>
+//               </div>
+//             ) : (
+//               <div className="table-responsive">
+//                 <Table borderless className="align-middle mb-0">
+//                   <thead>
+//                     <tr style={{ borderBottom: "2px solid #E5E7EB" }}>
+//                       <th style={{ padding: "1rem", color: "#6B7280", fontWeight: "600" }}>Tutor</th>
+//                       <th style={{ padding: "1rem", color: "#6B7280", fontWeight: "600" }}>Start Time</th>
+//                       <th style={{ padding: "1rem", color: "#6B7280", fontWeight: "600" }}>End Time</th>
+//                       <th style={{ padding: "1rem", color: "#6B7280", fontWeight: "600" }}>Status</th>
+//                       <th style={{ padding: "1rem", color: "#6B7280", fontWeight: "600" }}>Message</th>
+//                     </tr>
+//                   </thead>
+//                   <tbody>
+//                     {bookings.map((b) => (
+//                       <tr key={b.id} style={{ borderBottom: "1px solid #F3F4F6" }}>
+//                         <td style={{ padding: "1rem", fontWeight: "600", color: "#1F2937" }}>
+//                           {b.tutorUsername}
+//                         </td>
+//                         <td style={{ padding: "1rem", color: "#6B7280" }}>
+//                           {new Date(b.start).toLocaleString()}
+//                         </td>
+//                         <td style={{ padding: "1rem", color: "#6B7280" }}>
+//                           {new Date(b.end).toLocaleString()}
+//                         </td>
+//                         <td style={{ padding: "1rem" }}>
+//                           <span
+//                             style={{
+//                               padding: "0.25rem 0.75rem",
+//                               borderRadius: "20px",
+//                               fontSize: "0.8rem",
+//                               fontWeight: "600",
+//                               backgroundColor: 
+//                                 b.status === "Confirmed" ? "#D1FAE5" :
+//                                 b.status === "Pending" ? "#FEF3C7" : "#E5E7EB",
+//                               color: 
+//                                 b.status === "Confirmed" ? "#065F46" :
+//                                 b.status === "Pending" ? "#92400E" : "#374151"
+//                             }}
+//                           >
+//                             {b.status}
+//                           </span>
+//                         </td>
+//                         <td style={{ padding: "1rem", color: "#6B7280" }}>
+//                           {b.message || <span style={{ color: "#9CA3AF" }}>—</span>}
+//                         </td>
+//                       </tr>
+//                     ))}
+//                   </tbody>
+//                 </Table>
+//               </div>
+//             )}
+//           </div>
+//         </div>
+
+//         {/* Stats Section */}
+//         <Row className="mt-5 text-center">
+//           <Col md={4} className="mb-4">
+//             <div style={{ padding: "1.5rem", backgroundColor: "white", borderRadius: "12px" }}>
+//               <h3 style={{ color: "#006CFF", fontWeight: "700", marginBottom: "0.5rem" }}>6+</h3>
+//               <p style={{ color: "#6B7280", margin: 0 }}>Languages</p>
+//             </div>
+//           </Col>
+//           <Col md={4} className="mb-4">
+//             <div style={{ padding: "1.5rem", backgroundColor: "white", borderRadius: "12px" }}>
+//               <h3 style={{ color: "#006CFF", fontWeight: "700", marginBottom: "0.5rem" }}>50+</h3>
+//               <p style={{ color: "#6B7280", margin: 0 }}>Expert Tutors</p>
+//             </div>
+//           </Col>
+//           <Col md={4} className="mb-4">
+//             <div style={{ padding: "1.5rem", backgroundColor: "white", borderRadius: "12px" }}>
+//               <h3 style={{ color: "#FF7138", fontWeight: "700", marginBottom: "0.5rem" }}>95%</h3>
+//               <p style={{ color: "#6B7280", margin: 0 }}>Satisfaction Rate</p>
+//             </div>
+//           </Col>
+//         </Row>
+//       </Container>
+
+//       <style>
+//         {`
+//           @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+          
+//           body {
+//             font-family: 'Poppins', sans-serif;
+//           }
+//         `}
+//       </style>
+//     </div>
+//   );
+// };
+
+// export default Dashboard;
+
+
+
+
+
+
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Container, Row, Col, Card, Table, Button, Spinner } from "react-bootstrap";
 import axios from "axios";
-import { socket } from "./socket"; 
-import Tutorcard from "./Tutorcard"; // Make sure to create this component
+import { socket } from "./socket";
+import Tutorcard from "./Tutorcard"; // updated Tutorcard will handle Contact/View Tutor logic
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -775,6 +1163,8 @@ const Dashboard = () => {
   const [loadingTutors, setLoadingTutors] = useState(true);
   const [loadingBookings, setLoadingBookings] = useState(true);
 
+  const studentUsername = sessionStorage.getItem("studentUsername");
+
   // Fetch student bookings
   useEffect(() => {
     const token = sessionStorage.getItem("token");
@@ -782,8 +1172,7 @@ const Dashboard = () => {
       navigate("/");
       return;
     }
-    
-    const studentUsername = sessionStorage.getItem("studentUsername");
+
     if (!studentUsername) return;
 
     setLoadingBookings(true);
@@ -794,16 +1183,16 @@ const Dashboard = () => {
       .then((res) => setBookings(res.data))
       .catch((err) => console.error(err))
       .finally(() => setLoadingBookings(false));
-  }, [navigate]);
+  }, [navigate, studentUsername]);
 
   // Fetch recommended tutors
   useEffect(() => {
     const fetchRecommendedTutors = async () => {
       try {
-        const response = await axios.get('http://localhost:4000/api/tutors/recommended');
+        const response = await axios.get("http://localhost:4000/api/tutors/recommended");
         setRecommendedTutors(response.data);
       } catch (error) {
-        console.error('Error fetching tutors:', error);
+        console.error("Error fetching tutors:", error);
       } finally {
         setLoadingTutors(false);
       }
@@ -812,63 +1201,78 @@ const Dashboard = () => {
     fetchRecommendedTutors();
   }, []);
 
+  // Emit student online status
   useEffect(() => {
-    const username = sessionStorage.getItem("studentUsername");
-    if (username) socket.emit("student-online", username);
-  }, []);
+    if (studentUsername) socket.emit("student-online", studentUsername);
+  }, [studentUsername]);
 
   return (
-    <div style={{ 
-      minHeight: "100vh", 
-      background: "linear-gradient(to bottom, #FFFFFF 0%, #F8F9FA 100%)",
-      fontFamily: "'Poppins', sans-serif"
-    }}>
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "linear-gradient(to bottom, #FFFFFF 0%, #F8F9FA 100%)",
+        fontFamily: "'Poppins', sans-serif",
+      }}
+    >
       <Container className="py-5">
         {/* Header Section */}
         <div className="text-center mb-5">
-          <h1 style={{ 
-            fontWeight: "700", 
-            color: "#1F2937", 
-            marginBottom: "1rem",
-            fontSize: "2.5rem"
-          }}>
+          <h1
+            style={{
+              fontWeight: "700",
+              color: "#1F2937",
+              marginBottom: "1rem",
+              fontSize: "2.5rem",
+            }}
+          >
             Welcome to Lang++
           </h1>
-          <p style={{ 
-            color: "#6B7280", 
-            fontSize: "1.1rem",
-            maxWidth: "600px",
-            margin: "0 auto"
-          }}>
+          <p
+            style={{
+              color: "#6B7280",
+              fontSize: "1.1rem",
+              maxWidth: "600px",
+              margin: "0 auto",
+            }}
+          >
             Discover expert tutors and begin your learning journey
           </p>
         </div>
 
-        {/* Recommended Tutors Section */}
+        {/* Recommended Tutors Section with horizontal scroll */}
         <div className="mb-5">
-          <h2 style={{ 
-            fontWeight: "600", 
-            color: "#1F2937", 
-            marginBottom: "2rem",
-            textAlign: "center"
-          }}>
+          <h2
+            style={{
+              fontWeight: "600",
+              color: "#1F2937",
+              marginBottom: "1.5rem",
+              textAlign: "center",
+            }}
+          >
             ⭐ Recommended Tutors For You
           </h2>
-          
+
           {loadingTutors ? (
             <div className="text-center py-4">
               <Spinner animation="border" variant="primary" />
               <p className="mt-2 text-muted">Loading tutors...</p>
             </div>
           ) : (
-            <Row xs={1} sm={2} md={3} lg={4} className="g-4">
+            <div
+              style={{
+                display: "flex",
+                gap: "1rem",
+                overflowX: "auto",
+                paddingBottom: "1rem",
+                scrollbarWidth: "thin",
+              }}
+            >
               {recommendedTutors.map((tutor) => (
-                <Col key={tutor.id}>
-                  <Tutorcard tutor={tutor} />
-                </Col>
+                <div key={tutor.id} style={{ minWidth: "280px", flex: "0 0 auto" }}>
+                  <Tutorcard tutor={tutor} studentUsername={studentUsername} />
+                </div>
               ))}
-            </Row>
-    
+            </div>
           )}
         </div>
 
@@ -883,7 +1287,7 @@ const Dashboard = () => {
               borderRadius: "25px",
               padding: "0.75rem 2rem",
               fontWeight: "600",
-              transition: "all 0.3s ease"
+              transition: "all 0.3s ease",
             }}
             onMouseEnter={(e) => {
               e.target.style.backgroundColor = "#006CFF";
@@ -898,244 +1302,109 @@ const Dashboard = () => {
           </Button>
         </div>
 
-        {/* Languages Section */}
-        <div className="mb-5">
-          <h2 style={{ 
-            fontWeight: "600", 
-            color: "#1F2937", 
-            marginBottom: "2rem",
-            textAlign: "center"
-          }}>
-            Popular Language Courses
+        {/* Popular Languages */}
+        <div className="mb-5 text-center">
+          <h2 style={{ fontWeight: "600", color: "#1F2937", marginBottom: "1.5rem" }}>
+            🌍 Popular Languages
           </h2>
-          
-          <Row xs={1} sm={2} md={3} lg={3} className="g-4">
-            {lang.map((language, index) => (
-              <Col key={language}>
-                <Card
-                  onClick={() => navigate(`/tutorwale/${language.toLowerCase()}`)}
-                  className="h-100 text-center border-0"
-                  style={{
-                    cursor: "pointer",
-                    transition: "all 0.3s ease",
-                    backgroundColor: "white",
-                    borderRadius: "12px",
-                    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.05)",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = "translateY(-5px)";
-                    e.currentTarget.style.boxShadow = "0 10px 25px rgba(0, 0, 0, 0.1)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = "translateY(0)";
-                    e.currentTarget.style.boxShadow = "0 4px 6px rgba(0, 0, 0, 0.05)";
-                  }}
-                >
-                  <Card.Body className="d-flex flex-column justify-content-center align-items-center py-4">
-                    <div style={{
-                      width: "60px",
-                      height: "60px",
-                      borderRadius: "50%",
-                      backgroundColor: "#faa1a1ff",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      marginBottom: "1rem"
-                    }}>
-                      <span style={{ 
-                        fontSize: "1.5rem", 
-                        fontWeight: "700",
-                        color: "#006CFF"
-                      }}>
-                        {language.charAt(0)}
-                      </span>
-                    </div>
-                    <Card.Title style={{ 
-                      fontWeight: "600", 
-                      color: "#1F2937",
-                      marginBottom: "0.5rem"
-                    }}>
-                      {language}
-                    </Card.Title>
-                    <p style={{ 
-                      color: "#6B7280", 
-                      fontSize: "0.9rem",
-                      margin: 0
-                    }}>
-                      Expert {language} tutors
-                    </p>
-                  </Card.Body>
-                </Card>
-              </Col>
+          <div className="d-flex flex-wrap justify-content-center gap-3">
+            {lang.map((language, i) => (
+              <Card
+                key={i}
+                style={{
+                  padding: "1rem 2rem",
+                  borderRadius: "12px",
+                  border: "1px solid #E5E7EB",
+                  boxShadow: "0 4px 6px rgba(0,0,0,0.05)",
+                }}
+              >
+                {language}
+              </Card>
             ))}
-          </Row>
-        </div>
-
-        {/* Explore More Courses Button */}
-        <div className="text-center my-5">
-          <Button
-            onClick={() => navigate("/newcourses")}
-            style={{
-              backgroundColor: "white",
-              color: "#006CFF",
-              border: "1px solid #006CFF",
-              borderRadius: "25px",
-              padding: "0.75rem 2rem",
-              fontWeight: "600",
-              transition: "all 0.3s ease"
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.backgroundColor = "#006CFF";
-              e.target.style.color = "white";
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.backgroundColor = "white";
-              e.target.style.color = "#006CFF";
-            }}
-          >
-            Explore More Courses →
-          </Button>
-        </div>
-
-        {/* Bookings Section */}
-        <div className="mt-5">
-          <div style={{
-            backgroundColor: "white",
-            borderRadius: "12px",
-            padding: "2rem",
-            boxShadow: "0 4px 6px rgba(0, 0, 0, 0.05)"
-          }}>
-            <h2 style={{ 
-              fontWeight: "600", 
-              color: "#1F2937", 
-              marginBottom: "1.5rem",
-              display: "flex",
-              alignItems: "center",
-              gap: "0.5rem"
-            }}>
-              <span style={{
-                backgroundColor: "#006CFF",
-                width: "24px",
-                height: "24px",
-                borderRadius: "6px",
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "white",
-                fontSize: "0.8rem"
-              }}>📅</span>
-              Your Bookings
-            </h2>
-
-            {loadingBookings ? (
-              <div className="text-center py-4">
-                <Spinner animation="border" variant="primary" />
-                <p className="mt-2 text-muted">Loading bookings...</p>
-              </div>
-            ) : bookings.length === 0 ? (
-              <div className="text-center py-4">
-                <p style={{ color: "#6B7280", marginBottom: "1rem" }}>
-                  No bookings yet. Start by exploring our language courses!
-                </p>
-                <Button
-                  onClick={() => navigate("/tutorwale/english")}
-                  style={{
-                    backgroundColor: "#FF7138",
-                    border: "none",
-                    borderRadius: "6px",
-                    padding: "0.5rem 1.5rem",
-                    fontWeight: "600"
-                  }}
-                >
-                  Find a Tutor
-                </Button>
-              </div>
-            ) : (
-              <div className="table-responsive">
-                <Table borderless className="align-middle mb-0">
-                  <thead>
-                    <tr style={{ borderBottom: "2px solid #E5E7EB" }}>
-                      <th style={{ padding: "1rem", color: "#6B7280", fontWeight: "600" }}>Tutor</th>
-                      <th style={{ padding: "1rem", color: "#6B7280", fontWeight: "600" }}>Start Time</th>
-                      <th style={{ padding: "1rem", color: "#6B7280", fontWeight: "600" }}>End Time</th>
-                      <th style={{ padding: "1rem", color: "#6B7280", fontWeight: "600" }}>Status</th>
-                      <th style={{ padding: "1rem", color: "#6B7280", fontWeight: "600" }}>Message</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {bookings.map((b) => (
-                      <tr key={b.id} style={{ borderBottom: "1px solid #F3F4F6" }}>
-                        <td style={{ padding: "1rem", fontWeight: "600", color: "#1F2937" }}>
-                          {b.tutorUsername}
-                        </td>
-                        <td style={{ padding: "1rem", color: "#6B7280" }}>
-                          {new Date(b.start).toLocaleString()}
-                        </td>
-                        <td style={{ padding: "1rem", color: "#6B7280" }}>
-                          {new Date(b.end).toLocaleString()}
-                        </td>
-                        <td style={{ padding: "1rem" }}>
-                          <span
-                            style={{
-                              padding: "0.25rem 0.75rem",
-                              borderRadius: "20px",
-                              fontSize: "0.8rem",
-                              fontWeight: "600",
-                              backgroundColor: 
-                                b.status === "Confirmed" ? "#D1FAE5" :
-                                b.status === "Pending" ? "#FEF3C7" : "#E5E7EB",
-                              color: 
-                                b.status === "Confirmed" ? "#065F46" :
-                                b.status === "Pending" ? "#92400E" : "#374151"
-                            }}
-                          >
-                            {b.status}
-                          </span>
-                        </td>
-                        <td style={{ padding: "1rem", color: "#6B7280" }}>
-                          {b.message || <span style={{ color: "#9CA3AF" }}>—</span>}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </div>
-            )}
           </div>
         </div>
 
-        {/* Stats Section */}
-        <Row className="mt-5 text-center">
-          <Col md={4} className="mb-4">
-            <div style={{ padding: "1.5rem", backgroundColor: "white", borderRadius: "12px" }}>
-              <h3 style={{ color: "#006CFF", fontWeight: "700", marginBottom: "0.5rem" }}>6+</h3>
-              <p style={{ color: "#6B7280", margin: 0 }}>Languages</p>
+        {/* Bookings Section */}
+        <div className="mb-5">
+          <h2 style={{ fontWeight: "600", color: "#1F2937", marginBottom: "1.5rem" }}>
+            📅 Your Bookings
+          </h2>
+          {loadingBookings ? (
+            <div className="text-center py-4">
+              <Spinner animation="border" variant="primary" />
+              <p className="mt-2 text-muted">Loading bookings...</p>
             </div>
-          </Col>
-          <Col md={4} className="mb-4">
-            <div style={{ padding: "1.5rem", backgroundColor: "white", borderRadius: "12px" }}>
-              <h3 style={{ color: "#006CFF", fontWeight: "700", marginBottom: "0.5rem" }}>50+</h3>
-              <p style={{ color: "#6B7280", margin: 0 }}>Expert Tutors</p>
-            </div>
-          </Col>
-          <Col md={4} className="mb-4">
-            <div style={{ padding: "1.5rem", backgroundColor: "white", borderRadius: "12px" }}>
-              <h3 style={{ color: "#FF7138", fontWeight: "700", marginBottom: "0.5rem" }}>95%</h3>
-              <p style={{ color: "#6B7280", margin: 0 }}>Satisfaction Rate</p>
-            </div>
-          </Col>
-        </Row>
-      </Container>
+          ) : bookings.length === 0 ? (
+            <p className="text-muted text-center">No bookings yet. Start by contacting a tutor!</p>
+          ) : (
+            <Table striped bordered hover responsive>
+              <thead>
+                <tr>
+                  <th>Tutor</th>
+                  <th>Subject</th>
+                  <th>Date</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {bookings.map((b, i) => (
+                  <tr key={i}>
+                    <td>{b.tutorName}</td>
+                    <td>{b.subject}</td>
+                    <td>{new Date(b.date).toLocaleString()}</td>
+                    <td>
+                      <span
+                        style={{
+                          color:
+                            b.status === "confirmed"
+                              ? "green"
+                              : b.status === "pending"
+                              ? "orange"
+                              : "red",
+                          fontWeight: "600",
+                        }}
+                      >
+                        {b.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          )}
+        </div>
 
-      <style>
-        {`
-          @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
-          
-          body {
-            font-family: 'Poppins', sans-serif;
-          }
-        `}
-      </style>
+        {/* Stats Section */}
+        <div className="text-center py-5">
+          <h2 style={{ fontWeight: "600", color: "#1F2937", marginBottom: "2rem" }}>
+            📊 Your Learning Stats
+          </h2>
+          <Row className="g-4 justify-content-center">
+            <Col md={4}>
+              <Card className="p-4 text-center shadow-sm border-0">
+                <h3 style={{ color: "#006CFF", fontWeight: "700" }}>{bookings.length}</h3>
+                <p className="text-muted mb-0">Total Bookings</p>
+              </Card>
+            </Col>
+            <Col md={4}>
+              <Card className="p-4 text-center shadow-sm border-0">
+                <h3 style={{ color: "#10B981", fontWeight: "700" }}>
+                  {bookings.filter((b) => b.status === "confirmed").length}
+                </h3>
+                <p className="text-muted mb-0">Confirmed Lessons</p>
+              </Card>
+            </Col>
+            <Col md={4}>
+              <Card className="p-4 text-center shadow-sm border-0">
+                <h3 style={{ color: "#F59E0B", fontWeight: "700" }}>
+                  {bookings.filter((b) => b.status === "pending").length}
+                </h3>
+                <p className="text-muted mb-0">Pending Requests</p>
+              </Card>
+            </Col>
+          </Row>
+        </div>
+      </Container>
     </div>
   );
 };

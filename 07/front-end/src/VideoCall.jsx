@@ -3627,6 +3627,1005 @@
 
 
 
+// import React, { useEffect, useRef, useState } from "react";
+// import { useNavigate, useLocation } from "react-router-dom";
+// import { socket } from "./socket";
+
+// const VideoCall = () => {
+//   const localVideoRef = useRef(null);
+//   const remoteVideoRef = useRef(null);
+//   const pcRef = useRef(null);
+//   const [error, setError] = useState("");
+//   const [status, setStatus] = useState("Initializing...");
+//   const navigate = useNavigate();
+//   const location = useLocation();
+
+//   // Get URL params
+//   const query = new URLSearchParams(location.search);
+//   const bookingId = query.get("bookingId");
+//   const studentUsername = query.get("studentUsername");
+//   const userType = query.get("type"); // teacher or student
+//   const userName = query.get("name");
+
+//   // Ensure bookingId exists
+//   useEffect(() => {
+//     if (!bookingId) {
+//       setError("Booking ID is missing!");
+//       console.error("bookingId is missing!");
+//       return;
+//     }
+//   }, [bookingId]);
+
+//   useEffect(() => {
+//     let localStream;
+//     const pc = new RTCPeerConnection({
+//       iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+//     });
+//     pcRef.current = pc;
+
+//     const handleRemoteStream = (event) => {
+//       if (remoteVideoRef.current) remoteVideoRef.current.srcObject = event.streams[0];
+//     };
+
+//     pc.ontrack = handleRemoteStream;
+//     pc.onicecandidate = (event) => {
+//       if (event.candidate) {
+//         socket.emit("webrtc-candidate", { candidate: event.candidate, bookingId, to: otherSocketId });
+//       }
+//     };
+
+//     let otherSocketId = null;
+
+//     const initCall = async () => {
+//       try {
+//         localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+//         if (localVideoRef.current) localVideoRef.current.srcObject = localStream;
+//         localStream.getTracks().forEach((track) => pc.addTrack(track, localStream));
+
+//         if (userType === "teacher") {
+//           socket.emit("teacher-join", { bookingId, studentUsername, teacherName: userName });
+//           setStatus("Waiting for student...");
+//         } else {
+//           socket.emit("student-join", { bookingId, studentName: userName });
+//           setStatus("Connecting to teacher...");
+//         }
+//       } catch (err) {
+//         console.error("Media access error:", err);
+//         setError("Failed to access camera/microphone.");
+//       }
+//     };
+
+//     initCall();
+
+//     // Socket listeners
+//     socket.on("call-start", async ({ offer, fromSocketId }) => {
+//       otherSocketId = fromSocketId;
+//       await pc.setRemoteDescription(new RTCSessionDescription(offer));
+//       const answer = await pc.createAnswer();
+//       await pc.setLocalDescription(answer);
+//       socket.emit("webrtc-answer", { answer, to: fromSocketId, bookingId });
+//       setStatus("Call connected!");
+//     });
+
+//     socket.on("webrtc-answer", async ({ answer }) => {
+//       await pc.setRemoteDescription(new RTCSessionDescription(answer));
+//       setStatus("Call connected!");
+//     });
+
+//     socket.on("webrtc-candidate", async ({ candidate }) => {
+//       if (candidate) {
+//         try {
+//           await pc.addIceCandidate(new RTCIceCandidate(candidate));
+//         } catch (err) {
+//           console.error("Error adding ICE candidate:", err);
+//         }
+//       }
+//     });
+
+//     socket.on("end-call", () => {
+//       setStatus("Call ended by other party.");
+//       cleanup();
+//     });
+
+//     const cleanup = () => {
+//       if (localStream) localStream.getTracks().forEach((t) => t.stop());
+//       if (pc) pc.close();
+//       navigate("/"); // Redirect to dashboard
+//     };
+
+//     return () => {
+//       cleanup();
+//       socket.off("call-start");
+//       socket.off("webrtc-answer");
+//       socket.off("webrtc-candidate");
+//       socket.off("end-call");
+//     };
+//   }, [bookingId, studentUsername, userType, userName, navigate]);
+
+//   const endCall = () => {
+//     socket.emit("end-call", { bookingId });
+//     setStatus("Ending call...");
+//   };
+
+//   return (
+//     <div className="d-flex flex-column align-items-center justify-content-center" style={{ minHeight: "100vh", background: "#f0f2f5" }}>
+//       {error && <div className="alert alert-danger">{error}</div>}
+//       <h4>{status}</h4>
+//       <div className="d-flex mt-3 gap-3">
+//         <video ref={localVideoRef} autoPlay playsInline muted style={{ width: "300px", borderRadius: "8px", background: "black" }} />
+//         <video ref={remoteVideoRef} autoPlay playsInline style={{ width: "300px", borderRadius: "8px", background: "black" }} />
+//       </div>
+//       <button className="btn btn-danger mt-3" onClick={endCall}>End Call</button>
+//     </div>
+//   );
+// };
+
+// export default VideoCall;
+
+
+
+
+// import React, { useEffect, useRef, useState } from "react";
+// import { useNavigate, useLocation } from "react-router-dom";
+// import { socket } from "./socket";
+
+// const VideoCall = () => {
+//   const localVideoRef = useRef(null);
+//   const remoteVideoRef = useRef(null);
+//   const pcRef = useRef(null);
+//   const [error, setError] = useState("");
+//   const [status, setStatus] = useState("Initializing...");
+//   const navigate = useNavigate();
+//   const location = useLocation();
+
+//   // Get URL params
+//   const query = new URLSearchParams(location.search);
+//   const bookingId = query.get("bookingId");
+//   const studentUsername = query.get("studentUsername");
+//   const userType = query.get("type"); // teacher or student
+//   const userName = query.get("name");
+
+//   // Ensure bookingId exists
+//   useEffect(() => {
+//     if (!bookingId) {
+//       setError("Booking ID is missing!");
+//       alert("Booking ID is missing! Redirecting...");
+//       navigate(-1); // redirect back if missing
+//     }
+//   }, [bookingId, navigate]);
+
+//   useEffect(() => {
+//     if (!bookingId) return; // stop if bookingId missing
+
+//     let localStream;
+//     let otherSocketId = null;
+//     const pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
+//     pcRef.current = pc;
+
+//     pc.ontrack = (event) => {
+//       if (remoteVideoRef.current) remoteVideoRef.current.srcObject = event.streams[0];
+//     };
+
+//     pc.onicecandidate = (event) => {
+//       if (event.candidate && otherSocketId) {
+//         socket.emit("webrtc-candidate", { candidate: event.candidate, bookingId, to: otherSocketId });
+//       }
+//     };
+
+//     const initCall = async () => {
+//       try {
+//         localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+//         if (localVideoRef.current) localVideoRef.current.srcObject = localStream;
+//         localStream.getTracks().forEach((track) => pc.addTrack(track, localStream));
+
+//         // Emit join events only if bookingId exists
+//         if (userType === "teacher") {
+//           socket.emit("teacher-join", { bookingId, studentUsername, teacherName: userName });
+//           setStatus("Waiting for student...");
+//         } else {
+//           socket.emit("student-join", { bookingId, studentName: userName });
+//           setStatus("Connecting to teacher...");
+//         }
+//       } catch (err) {
+//         console.error("Media access error:", err);
+//         setError("Failed to access camera/microphone.");
+//       }
+//     };
+
+//     initCall();
+
+//     // Socket listeners
+//     socket.on("call-start", async ({ offer, fromSocketId }) => {
+//       otherSocketId = fromSocketId;
+//       await pc.setRemoteDescription(new RTCSessionDescription(offer));
+//       const answer = await pc.createAnswer();
+//       await pc.setLocalDescription(answer);
+//       socket.emit("webrtc-answer", { answer, to: fromSocketId, bookingId });
+//       setStatus("Call connected!");
+//     });
+
+//     socket.on("webrtc-answer", async ({ answer }) => {
+//       await pc.setRemoteDescription(new RTCSessionDescription(answer));
+//       setStatus("Call connected!");
+//     });
+
+//     socket.on("webrtc-candidate", async ({ candidate }) => {
+//       if (candidate) {
+//         try {
+//           await pc.addIceCandidate(new RTCIceCandidate(candidate));
+//         } catch (err) {
+//           console.error("Error adding ICE candidate:", err);
+//         }
+//       }
+//     });
+
+//     socket.on("end-call", () => {
+//       setStatus("Call ended by other party.");
+//       cleanup();
+//     });
+
+//     const cleanup = () => {
+//       if (localStream) localStream.getTracks().forEach((t) => t.stop());
+//       if (pc) pc.close();
+//       socket.emit("leave-room", { bookingId });
+//     };
+
+//     return () => {
+//       cleanup();
+//       socket.off("call-start");
+//       socket.off("webrtc-answer");
+//       socket.off("webrtc-candidate");
+//       socket.off("end-call");
+//     };
+//   }, [bookingId, studentUsername, userType, userName]);
+
+//   const endCall = () => {
+//     if (!bookingId) return;
+//     socket.emit("end-call", { bookingId });
+//     setStatus("Ending call...");
+//   };
+
+//   return (
+//     <div className="d-flex flex-column align-items-center justify-content-center" style={{ minHeight: "100vh", background: "#f0f2f5" }}>
+//       {error && <div className="alert alert-danger">{error}</div>}
+//       <h4>{status}</h4>
+//       <div className="d-flex mt-3 gap-3">
+//         <video ref={localVideoRef} autoPlay playsInline muted style={{ width: "300px", borderRadius: "8px", background: "black" }} />
+//         <video ref={remoteVideoRef} autoPlay playsInline style={{ width: "300px", borderRadius: "8px", background: "black" }} />
+//       </div>
+//       <button className="btn btn-danger mt-3" onClick={endCall}>End Call</button>
+//     </div>
+//   );
+// };
+
+// export default VideoCall;
+
+
+
+
+// import React, { useEffect, useRef, useState } from "react";
+// import { useNavigate, useLocation } from "react-router-dom";
+// import { socket } from "./socket";
+
+// const VideoCall = () => {
+//   const localVideoRef = useRef(null);
+//   const remoteVideoRef = useRef(null);
+//   const pcRef = useRef(null);
+//   const [error, setError] = useState("");
+//   const [status, setStatus] = useState("Initializing...");
+//   const navigate = useNavigate();
+//   const location = useLocation();
+
+//   // Get URL params
+//   const query = new URLSearchParams(location.search);
+//   const bookingId = query.get("bookingId");
+//   const roomId = query.get("roomId") || bookingId; // fallback to bookingId
+//   const studentUsername = query.get("studentUsername");
+//   const userType = query.get("type"); // teacher or student
+//   const userName = query.get("name");
+
+//   // Ensure bookingId exists
+//   useEffect(() => {
+//     if (!bookingId) {
+//       setError("Booking ID is missing!");
+//       console.error("bookingId is missing!");
+//       return;
+//     }
+//   }, [bookingId]);
+
+//   useEffect(() => {
+//     let localStream;
+//     let otherSocketId = null;
+//     const pc = new RTCPeerConnection({
+//       iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+//     });
+//     pcRef.current = pc;
+
+//     pc.ontrack = (event) => {
+//       if (remoteVideoRef.current) remoteVideoRef.current.srcObject = event.streams[0];
+//     };
+
+//     pc.onicecandidate = (event) => {
+//       if (event.candidate && otherSocketId) {
+//         socket.emit("webrtc-candidate", { candidate: event.candidate, roomId, to: otherSocketId });
+//       }
+//     };
+
+//     const initCall = async () => {
+//       try {
+//         localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+//         if (localVideoRef.current) localVideoRef.current.srcObject = localStream;
+//         localStream.getTracks().forEach((track) => pc.addTrack(track, localStream));
+
+//         if (userType === "teacher") {
+//           socket.emit("teacher-join", { bookingId, roomId, studentUsername, teacherName: userName });
+//           setStatus("Waiting for student...");
+//         } else {
+//           socket.emit("student-join", { bookingId, roomId, studentName: userName });
+//           setStatus("Connecting to teacher...");
+//         }
+//       } catch (err) {
+//         console.error("Media access error:", err);
+//         setError("Failed to access camera/microphone.");
+//       }
+//     };
+
+//     initCall();
+
+//     // Socket listeners
+//     socket.on("call-start", async ({ offer, fromSocketId }) => {
+//       otherSocketId = fromSocketId;
+//       await pc.setRemoteDescription(new RTCSessionDescription(offer));
+//       const answer = await pc.createAnswer();
+//       await pc.setLocalDescription(answer);
+//       socket.emit("webrtc-answer", { answer, to: fromSocketId, roomId });
+//       setStatus("Call connected!");
+//     });
+
+//     socket.on("webrtc-answer", async ({ answer }) => {
+//       await pc.setRemoteDescription(new RTCSessionDescription(answer));
+//       setStatus("Call connected!");
+//     });
+
+//     socket.on("webrtc-candidate", async ({ candidate }) => {
+//       if (candidate) {
+//         try { await pc.addIceCandidate(new RTCIceCandidate(candidate)); }
+//         catch (err) { console.error("Error adding ICE candidate:", err); }
+//       }
+//     });
+
+//     socket.on("end-call", () => {
+//       setStatus("Call ended by other party.");
+//       cleanup();
+//     });
+
+//     const cleanup = () => {
+//       if (localStream) localStream.getTracks().forEach((t) => t.stop());
+//       if (pc) pc.close();
+//       navigate("/"); // Redirect to dashboard
+//     };
+
+//     return () => {
+//       cleanup();
+//       socket.off("call-start");
+//       socket.off("webrtc-answer");
+//       socket.off("webrtc-candidate");
+//       socket.off("end-call");
+//     };
+//   }, [bookingId, roomId, studentUsername, userType, userName, navigate]);
+
+//   const endCall = () => {
+//     socket.emit("end-call", { roomId });
+//     setStatus("Ending call...");
+//   };
+
+//   return (
+//     <div className="d-flex flex-column align-items-center justify-content-center" style={{ minHeight: "100vh", background: "#f0f2f5" }}>
+//       {error && <div className="alert alert-danger">{error}</div>}
+//       <h4>{status}</h4>
+//       <div className="d-flex mt-3 gap-3">
+//         <video ref={localVideoRef} autoPlay playsInline muted style={{ width: "300px", borderRadius: "8px", background: "black" }} />
+//         <video ref={remoteVideoRef} autoPlay playsInline style={{ width: "300px", borderRadius: "8px", background: "black" }} />
+//       </div>
+//       <button className="btn btn-danger mt-3" onClick={endCall}>End Call</button>
+//     </div>
+//   );
+// };
+
+// export default VideoCall;
+
+
+
+
+// import React, { useEffect, useRef, useState } from "react";
+// import { useNavigate, useLocation } from "react-router-dom";
+// import { socket } from "./socket";
+
+// const VideoCall = () => {
+//   const localVideoRef = useRef(null);
+//   const remoteVideoRef = useRef(null);
+//   const pcRef = useRef(null);
+//   const [status, setStatus] = useState("Initializing...");
+//   const navigate = useNavigate();
+//   const location = useLocation();
+
+//   const query = new URLSearchParams(location.search);
+//   const roomId = query.get("roomId");
+//   const userType = query.get("type");
+//   const userName = query.get("name");
+
+//   useEffect(() => {
+//     let localStream;
+//     const pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
+//     pcRef.current = pc;
+
+//     // Local stream
+//     navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+//       .then(stream => {
+//         localStream = stream;
+//         localVideoRef.current.srcObject = stream;
+//         stream.getTracks().forEach(track => pc.addTrack(track, stream));
+//       })
+//       .catch(err => {
+//         console.error("Media error:", err);
+//         setStatus("Failed to access camera/mic.");
+//       });
+
+//     // Remote track
+//     pc.ontrack = event => { remoteVideoRef.current.srcObject = event.streams[0]; };
+
+//     // ICE candidate
+//     pc.onicecandidate = event => {
+//       if (event.candidate) {
+//         socket.emit("ice-candidate", { candidate: event.candidate, roomId });
+//       }
+//     };
+
+//     // Join room
+//     socket.emit("join-room", { roomId, username: userName, userType });
+
+//     // Peer ready -> create offer if needed
+//     socket.on("peer-ready", async ({ to }) => {
+//       if (userType === "teacher" || userType === "student") {
+//         const offer = await pc.createOffer();
+//         await pc.setLocalDescription(offer);
+//         socket.emit("offer", { sdp: offer, to, roomId });
+//       }
+//     });
+
+//     // Offer received
+//     socket.on("offer", async ({ sdp, from }) => {
+//       await pc.setRemoteDescription(new RTCSessionDescription(sdp));
+//       const answer = await pc.createAnswer();
+//       await pc.setLocalDescription(answer);
+//       socket.emit("answer", { sdp: answer, to: from, roomId });
+//       setStatus("Call connected!");
+//     });
+
+//     // Answer received
+//     socket.on("answer", async ({ sdp }) => {
+//       await pc.setRemoteDescription(new RTCSessionDescription(sdp));
+//       setStatus("Call connected!");
+//     });
+
+//     // ICE received
+//     socket.on("ice-candidate", async ({ candidate }) => {
+//       if (candidate) {
+//         try { await pc.addIceCandidate(new RTCIceCandidate(candidate)); }
+//         catch (err) { console.error("Error adding ICE candidate:", err); }
+//       }
+//     });
+
+//     // Cleanup
+//     const cleanup = () => {
+//       if (localStream) localStream.getTracks().forEach(t => t.stop());
+//       if (pc) pc.close();
+//       navigate("/");
+//     };
+
+//     return () => {
+//       cleanup();
+//       socket.off("peer-ready");
+//       socket.off("offer");
+//       socket.off("answer");
+//       socket.off("ice-candidate");
+//     };
+//   }, [roomId, userType, userName, navigate]);
+
+//   const endCall = () => {
+//     socket.emit("leave-room", { roomId, username: userName });
+//     setStatus("Ending call...");
+//     navigate("/");
+//   };
+
+//   return (
+//     <div className="d-flex flex-column align-items-center justify-content-center" style={{ minHeight: "100vh", background: "#f0f2f5" }}>
+//       <h4>{status}</h4>
+//       <div className="d-flex mt-3 gap-3">
+//         <video ref={localVideoRef} autoPlay playsInline muted style={{ width: "300px", borderRadius: "8px", background: "black" }} />
+//         <video ref={remoteVideoRef} autoPlay playsInline style={{ width: "300px", borderRadius: "8px", background: "black" }} />
+//       </div>
+//       <button className="btn btn-danger mt-3" onClick={endCall}>End Call</button>
+//     </div>
+//   );
+// };
+
+// export default VideoCall;
+
+
+
+
+
+// import React, { useEffect, useRef, useState } from "react";
+// import { useNavigate, useLocation } from "react-router-dom";
+// import { socket } from "./socket";
+
+// const VideoCall = () => {
+//   const localVideoRef = useRef(null);
+//   const remoteVideoRef = useRef(null);
+//   const pcRef = useRef(null);
+//   const remoteDescriptionSet = useRef(false);
+//   const iceCandidateQueue = useRef([]);
+//   const [status, setStatus] = useState("Initializing...");
+//   const navigate = useNavigate();
+//   const location = useLocation();
+
+//   const query = new URLSearchParams(location.search);
+//   const roomId = query.get("roomId");
+//   const userType = query.get("type");
+//   const userName = query.get("name");
+
+//   useEffect(() => {
+//     let localStream;
+//     const pc = new RTCPeerConnection({
+//       iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+//     });
+//     pcRef.current = pc;
+
+//     // Get local media
+//     navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+//       .then(stream => {
+//         localStream = stream;
+//         localVideoRef.current.srcObject = stream;
+//         stream.getTracks().forEach(track => pc.addTrack(track, stream));
+//       })
+//       .catch(err => {
+//         console.error("Media error:", err);
+//         setStatus("Failed to access camera/mic.");
+//       });
+
+//     // Remote track
+//     pc.ontrack = event => {
+//       remoteVideoRef.current.srcObject = event.streams[0];
+//     };
+
+//     // ICE candidate
+//     pc.onicecandidate = event => {
+//       if (event.candidate) {
+//         socket.emit("ice-candidate", { candidate: event.candidate, roomId });
+//       }
+//     };
+
+//     // Join room
+//     socket.emit("join-room", { roomId, username: userName, userType });
+
+//     // Peer ready -> create offer if teacher
+//     socket.on("peer-ready", async ({ to }) => {
+//       if (userType === "teacher") {
+//         try {
+//           const offer = await pc.createOffer();
+//           await pc.setLocalDescription(offer);
+//           socket.emit("offer", { sdp: offer, to, roomId });
+//         } catch (err) {
+//           console.error("Error creating offer:", err);
+//         }
+//       }
+//     });
+
+//     // Offer received
+//     socket.on("offer", async ({ sdp, from }) => {
+//       if (!remoteDescriptionSet.current) {
+//         try {
+//           await pc.setRemoteDescription(new RTCSessionDescription(sdp));
+//           const answer = await pc.createAnswer();
+//           await pc.setLocalDescription(answer);
+//           socket.emit("answer", { sdp: answer, to: from, roomId });
+//           remoteDescriptionSet.current = true;
+//           setStatus("Call connected!");
+//         } catch (err) {
+//           console.error("Error handling offer:", err);
+//         }
+//       }
+//     });
+
+//     // Answer received
+//     socket.on("answer", async ({ sdp }) => {
+//       if (!remoteDescriptionSet.current) {
+//         try {
+//           await pc.setRemoteDescription(new RTCSessionDescription(sdp));
+//           remoteDescriptionSet.current = true;
+
+//           // Add any queued ICE candidates
+//           for (let c of iceCandidateQueue.current) {
+//             await pc.addIceCandidate(new RTCIceCandidate(c));
+//           }
+//           iceCandidateQueue.current = [];
+//           setStatus("Call connected!");
+//         } catch (err) {
+//           console.error("Error setting remote answer:", err);
+//         }
+//       }
+//     });
+
+//     // ICE candidate received
+//     socket.on("ice-candidate", async ({ candidate }) => {
+//       if (candidate) {
+//         if (remoteDescriptionSet.current) {
+//           try {
+//             await pc.addIceCandidate(new RTCIceCandidate(candidate));
+//           } catch (err) {
+//             console.error("Error adding ICE candidate:", err);
+//           }
+//         } else {
+//           iceCandidateQueue.current.push(candidate);
+//         }
+//       }
+//     });
+
+//     // Cleanup
+//     const cleanup = () => {
+//       if (localStream) localStream.getTracks().forEach(t => t.stop());
+//       if (pc) pc.close();
+//       navigate("/");
+//     };
+
+//     return () => {
+//       cleanup();
+//       socket.off("peer-ready");
+//       socket.off("offer");
+//       socket.off("answer");
+//       socket.off("ice-candidate");
+//     };
+//   }, [roomId, userType, userName, navigate]);
+
+//   const endCall = () => {
+//     socket.emit("leave-room", { roomId, username: userName });
+//     setStatus("Ending call...");
+//     navigate("/");
+//   };
+
+//   return (
+//     <div className="d-flex flex-column align-items-center justify-content-center" style={{ minHeight: "100vh", background: "#f0f2f5" }}>
+//       <h4>{status}</h4>
+//       <div className="d-flex mt-3 gap-3">
+//         <video ref={localVideoRef} autoPlay playsInline muted style={{ width: "300px", borderRadius: "8px", background: "black" }} />
+//         <video ref={remoteVideoRef} autoPlay playsInline style={{ width: "300px", borderRadius: "8px", background: "black" }} />
+//       </div>
+//       <button className="btn btn-danger mt-3" onClick={endCall}>End Call</button>
+//     </div>
+//   );
+// };
+
+// export default VideoCall;
+
+
+
+
+
+
+
+
+// import React, { useEffect, useRef, useState } from "react";
+// import { useNavigate, useLocation } from "react-router-dom";
+// import { socket } from "./socket";
+
+// const VideoCall = () => {
+//   const localVideoRef = useRef(null);
+//   const remoteVideoRef = useRef(null);
+//   const pcRef = useRef(null);
+//   const iceCandidateQueue = useRef([]);
+//   const [status, setStatus] = useState("Initializing...");
+//   const navigate = useNavigate();
+//   const location = useLocation();
+
+//   const query = new URLSearchParams(location.search);
+//   const roomId = query.get("roomId");
+//   const userType = query.get("type");
+//   const userName = query.get("name");
+
+//   useEffect(() => {
+//     let localStream;
+//     const pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
+//     pcRef.current = pc;
+
+//     // Get local media
+//     navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+//       .then(stream => {
+//         localStream = stream;
+//         localVideoRef.current.srcObject = stream;
+//         stream.getTracks().forEach(track => pc.addTrack(track, stream));
+//       })
+//       .catch(err => {
+//         console.error("Media error:", err);
+//         setStatus("Failed to access camera/mic.");
+//       });
+
+//     // Remote track
+//     pc.ontrack = event => {
+//       remoteVideoRef.current.srcObject = event.streams[0];
+//     };
+
+//     // ICE candidate
+//     pc.onicecandidate = event => {
+//       if (event.candidate) {
+//         socket.emit("ice-candidate", { candidate: event.candidate, roomId });
+//       }
+//     };
+
+//     // Join room
+//     socket.emit("join-room", { roomId, username: userName, userType });
+
+//     // Teacher creates offer
+//     socket.on("peer-ready", async ({ to }) => {
+//       if (userType === "teacher") {
+//         try {
+//           const offer = await pc.createOffer();
+//           await pc.setLocalDescription(offer);
+//           socket.emit("offer", { sdp: offer, to, roomId });
+//         } catch (err) {
+//           console.error("Error creating offer:", err);
+//         }
+//       }
+//     });
+
+//     // Offer received (student side)
+//     socket.on("offer", async ({ sdp, from }) => {
+//       try {
+//         await pc.setRemoteDescription(new RTCSessionDescription(sdp));
+//         const answer = await pc.createAnswer();
+//         await pc.setLocalDescription(answer);
+//         socket.emit("answer", { sdp: answer, to: from, roomId });
+
+//         // Apply queued ICE candidates
+//         for (let c of iceCandidateQueue.current) {
+//           await pc.addIceCandidate(new RTCIceCandidate(c));
+//         }
+//         iceCandidateQueue.current = [];
+//         setStatus("Call connected!");
+//       } catch (err) {
+//         console.error("Error handling offer:", err);
+//       }
+//     });
+
+//     // Answer received (teacher side)
+//     socket.on("answer", async ({ sdp }) => {
+//       try {
+//         await pc.setRemoteDescription(new RTCSessionDescription(sdp));
+//         setStatus("Call connected!");
+
+//         // Apply queued ICE candidates
+//         for (let c of iceCandidateQueue.current) {
+//           await pc.addIceCandidate(new RTCIceCandidate(c));
+//         }
+//         iceCandidateQueue.current = [];
+//       } catch (err) {
+//         console.error("Error setting remote answer:", err);
+//       }
+//     });
+
+//     // ICE candidate received
+//     socket.on("ice-candidate", async ({ candidate }) => {
+//       if (candidate) {
+//         try {
+//           if (pc.remoteDescription && pc.remoteDescription.type) {
+//             await pc.addIceCandidate(new RTCIceCandidate(candidate));
+//           } else {
+//             iceCandidateQueue.current.push(candidate);
+//           }
+//         } catch (err) {
+//           console.error("Error adding ICE candidate:", err);
+//         }
+//       }
+//     });
+
+//     // Cleanup
+//     const cleanup = () => {
+//       if (localStream) localStream.getTracks().forEach(t => t.stop());
+//       if (pc) pc.close();
+//       navigate("/");
+//     };
+
+//     return () => {
+//       cleanup();
+//       socket.off("peer-ready");
+//       socket.off("offer");
+//       socket.off("answer");
+//       socket.off("ice-candidate");
+//     };
+//   }, [roomId, userType, userName, navigate]);
+
+//   const endCall = () => {
+//     socket.emit("leave-room", { roomId, username: userName });
+//     setStatus("Ending call...");
+//     navigate("/");
+//   };
+
+//   return (
+//     <div className="d-flex flex-column align-items-center justify-content-center" style={{ minHeight: "100vh", background: "#f0f2f5" }}>
+//       <h4>{status}</h4>
+//       <div className="d-flex mt-3 gap-3">
+//         <video ref={localVideoRef} autoPlay playsInline muted style={{ width: "300px", borderRadius: "8px", background: "black" }} />
+//         <video ref={remoteVideoRef} autoPlay playsInline style={{ width: "300px", borderRadius: "8px", background: "black" }} />
+//       </div>
+//       <button className="btn btn-danger mt-3" onClick={endCall}>End Call</button>
+//     </div>
+//   );
+// };
+
+// export default VideoCall;
+
+
+// ______________is main student kis side teacher ka video aa raha hai
+
+// import React, { useEffect, useRef, useState } from "react";
+// import { useNavigate, useLocation } from "react-router-dom";
+// import { socket } from "./socket";
+
+// const VideoCall = () => {
+//   const localVideoRef = useRef(null);
+//   const remoteVideoRef = useRef(null);
+//   const pcRef = useRef(null);
+//   const iceQueue = useRef([]);
+//   const [status, setStatus] = useState("Initializing...");
+//   const navigate = useNavigate();
+//   const location = useLocation();
+
+//   const query = new URLSearchParams(location.search);
+//   const roomId = query.get("roomId");
+//   const userType = query.get("type"); // 'teacher' or 'student'
+//   const userName = query.get("name");
+
+//   useEffect(() => {
+//     let localStream;
+//     const pc = new RTCPeerConnection({
+//       iceServers: [
+//         { urls: "stun:stun.l.google.com:19302" },
+//         // Add TURN server if needed for NAT issues
+//       ],
+//     });
+//     pcRef.current = pc;
+
+//     // 1️⃣ Get local media
+//     navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+//       .then(stream => {
+//         localStream = stream;
+//         localVideoRef.current.srcObject = stream;
+//         stream.getTracks().forEach(track => pc.addTrack(track, stream));
+//       })
+//       .catch(err => {
+//         console.error("Media error:", err);
+//         setStatus("Failed to access camera/mic.");
+//       });
+
+//     // 2️⃣ Remote track handler
+//     pc.ontrack = event => {
+//       remoteVideoRef.current.srcObject = event.streams[0];
+//     };
+
+//     // 3️⃣ ICE candidate
+//     pc.onicecandidate = event => {
+//       if (event.candidate) {
+//         socket.emit("ice-candidate", { candidate: event.candidate, roomId });
+//       }
+//     };
+
+//     // 4️⃣ Join room
+//     socket.emit("join-room", { roomId, username: userName, userType });
+
+//     // 5️⃣ Offer/answer logic
+//     const createOffer = async (to) => {
+//       try {
+//         const offer = await pc.createOffer();
+//         await pc.setLocalDescription(offer);
+//         socket.emit("offer", { sdp: offer, to, roomId });
+//       } catch (err) {
+//         console.error("Error creating offer:", err);
+//       }
+//     };
+
+//     socket.on("offer", async ({ sdp, from }) => {
+//       try {
+//         await pc.setRemoteDescription(new RTCSessionDescription(sdp));
+//         const answer = await pc.createAnswer();
+//         await pc.setLocalDescription(answer);
+//         socket.emit("answer", { sdp: answer, to: from, roomId });
+//         setStatus("Call connected!");
+//         // Add queued ICE candidates
+//         for (let c of iceQueue.current) {
+//           await pc.addIceCandidate(new RTCIceCandidate(c));
+//         }
+//         iceQueue.current = [];
+//       } catch (err) {
+//         console.error("Error handling offer:", err);
+//       }
+//     });
+
+//     socket.on("answer", async ({ sdp }) => {
+//       try {
+//         await pc.setRemoteDescription(new RTCSessionDescription(sdp));
+//         setStatus("Call connected!");
+//         // Add queued ICE candidates
+//         for (let c of iceQueue.current) {
+//           await pc.addIceCandidate(new RTCIceCandidate(c));
+//         }
+//         iceQueue.current = [];
+//       } catch (err) {
+//         console.error("Error setting remote answer:", err);
+//       }
+//     });
+
+//     socket.on("ice-candidate", async ({ candidate }) => {
+//       if (!candidate) return;
+//       try {
+//         if (pc.remoteDescription && pc.remoteDescription.type) {
+//           await pc.addIceCandidate(new RTCIceCandidate(candidate));
+//         } else {
+//           iceQueue.current.push(candidate);
+//         }
+//       } catch (err) {
+//         console.error("Error adding ICE candidate:", err);
+//       }
+//     });
+
+//     socket.on("peer-ready", ({ to }) => {
+//       // Only teacher creates offer
+//       if (userType === "teacher") createOffer(to);
+//     });
+
+//     // 6️⃣ Cleanup
+//     const cleanup = () => {
+//       if (localStream) localStream.getTracks().forEach(t => t.stop());
+//       if (pc) pc.close();
+//       navigate("/");
+//     };
+
+//     return () => {
+//       cleanup();
+//       socket.off("offer");
+//       socket.off("answer");
+//       socket.off("ice-candidate");
+//       socket.off("peer-ready");
+//     };
+//   }, [roomId, userType, userName, navigate]);
+
+//   const endCall = () => {
+//     socket.emit("leave-room", { roomId, username: userName });
+//     setStatus("Ending call...");
+//     navigate("/");
+//   };
+
+//   return (
+//     <div className="d-flex flex-column align-items-center justify-content-center" style={{ minHeight: "100vh", background: "#f0f2f5" }}>
+//       <h4>{status}</h4>
+//       <div className="d-flex mt-3 gap-3">
+//         <video ref={localVideoRef} autoPlay playsInline muted style={{ width: "300px", borderRadius: "8px", background: "black" }} />
+//         <video ref={remoteVideoRef} autoPlay playsInline style={{ width: "300px", borderRadius: "8px", background: "black" }} />
+//       </div>
+//       <button className="btn btn-danger mt-3" onClick={endCall}>End Call</button>
+//     </div>
+//   );
+// };
+
+// export default VideoCall;
+
+
+
+
+
+
+
+
+
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { socket } from "./socket";
@@ -3635,121 +4634,146 @@ const VideoCall = () => {
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
   const pcRef = useRef(null);
-  const [error, setError] = useState("");
   const [status, setStatus] = useState("Initializing...");
   const navigate = useNavigate();
   const location = useLocation();
+  const remoteDescriptionSet = useRef(false);
+  const iceCandidateQueue = useRef([]);
 
-  // Get URL params
   const query = new URLSearchParams(location.search);
-  const bookingId = query.get("bookingId");
-  const studentUsername = query.get("studentUsername");
-  const userType = query.get("type"); // teacher or student
+  const roomId = query.get("roomId");
+  const userType = query.get("type");
   const userName = query.get("name");
-
-  // Ensure bookingId exists
-  useEffect(() => {
-    if (!bookingId) {
-      setError("Booking ID is missing!");
-      console.error("bookingId is missing!");
-      return;
-    }
-  }, [bookingId]);
 
   useEffect(() => {
     let localStream;
+
     const pc = new RTCPeerConnection({
-      iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+      iceServers: [
+        { urls: "stun:stun.l.google.com:19302" },
+        // Add TURN server if available for better connectivity
+        // { urls: "turn:TURN_SERVER_URL:3478", username: "user", credential: "pass" }
+      ],
     });
     pcRef.current = pc;
 
-    const handleRemoteStream = (event) => {
-      if (remoteVideoRef.current) remoteVideoRef.current.srcObject = event.streams[0];
+    // Local stream
+    navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+      .then(stream => {
+        localStream = stream;
+        localVideoRef.current.srcObject = stream;
+        stream.getTracks().forEach(track => pc.addTrack(track, stream));
+
+        // Notify server that this peer is ready after getting local media
+        socket.emit("peer-ready", { roomId, userType, username: userName });
+      })
+      .catch(err => {
+        console.error("Media error:", err);
+        setStatus("Failed to access camera/mic.");
+      });
+
+    // Remote stream
+    pc.ontrack = event => {
+      remoteVideoRef.current.srcObject = event.streams[0];
     };
 
-    pc.ontrack = handleRemoteStream;
-    pc.onicecandidate = (event) => {
+    // ICE candidates
+    pc.onicecandidate = event => {
       if (event.candidate) {
-        socket.emit("webrtc-candidate", { candidate: event.candidate, bookingId, to: otherSocketId });
+        socket.emit("ice-candidate", { candidate: event.candidate, roomId });
       }
     };
 
-    let otherSocketId = null;
+    // Join room
+    socket.emit("join-room", { roomId, username: userName, userType });
 
-    const initCall = async () => {
-      try {
-        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        if (localVideoRef.current) localVideoRef.current.srcObject = localStream;
-        localStream.getTracks().forEach((track) => pc.addTrack(track, localStream));
-
-        if (userType === "teacher") {
-          socket.emit("teacher-join", { bookingId, studentUsername, teacherName: userName });
-          setStatus("Waiting for student...");
-        } else {
-          socket.emit("student-join", { bookingId, studentName: userName });
-          setStatus("Connecting to teacher...");
-        }
-      } catch (err) {
-        console.error("Media access error:", err);
-        setError("Failed to access camera/microphone.");
-      }
-    };
-
-    initCall();
-
-    // Socket listeners
-    socket.on("call-start", async ({ offer, fromSocketId }) => {
-      otherSocketId = fromSocketId;
-      await pc.setRemoteDescription(new RTCSessionDescription(offer));
-      const answer = await pc.createAnswer();
-      await pc.setLocalDescription(answer);
-      socket.emit("webrtc-answer", { answer, to: fromSocketId, bookingId });
-      setStatus("Call connected!");
-    });
-
-    socket.on("webrtc-answer", async ({ answer }) => {
-      await pc.setRemoteDescription(new RTCSessionDescription(answer));
-      setStatus("Call connected!");
-    });
-
-    socket.on("webrtc-candidate", async ({ candidate }) => {
-      if (candidate) {
+    // When another peer is ready, teacher creates offer
+    socket.on("peer-ready", async ({ to }) => {
+      if (userType === "teacher") {
         try {
-          await pc.addIceCandidate(new RTCIceCandidate(candidate));
+          const offer = await pc.createOffer();
+          await pc.setLocalDescription(offer);
+          socket.emit("offer", { sdp: offer, to, roomId });
         } catch (err) {
-          console.error("Error adding ICE candidate:", err);
+          console.error("Error creating offer:", err);
         }
       }
     });
 
-    socket.on("end-call", () => {
-      setStatus("Call ended by other party.");
-      cleanup();
+    // Offer received
+    socket.on("offer", async ({ sdp, from }) => {
+      if (!remoteDescriptionSet.current) {
+        try {
+          await pc.setRemoteDescription(new RTCSessionDescription(sdp));
+          const answer = await pc.createAnswer();
+          await pc.setLocalDescription(answer);
+          socket.emit("answer", { sdp: answer, to: from, roomId });
+          remoteDescriptionSet.current = true;
+          setStatus("Call connected!");
+        } catch (err) {
+          console.error("Error handling offer:", err);
+        }
+      }
     });
 
+    // Answer received
+    socket.on("answer", async ({ sdp }) => {
+      if (!remoteDescriptionSet.current) {
+        try {
+          await pc.setRemoteDescription(new RTCSessionDescription(sdp));
+          remoteDescriptionSet.current = true;
+
+          // Add any queued ICE candidates
+          for (let c of iceCandidateQueue.current) {
+            await pc.addIceCandidate(new RTCIceCandidate(c));
+          }
+          iceCandidateQueue.current = [];
+          setStatus("Call connected!");
+        } catch (err) {
+          console.error("Error setting remote answer:", err);
+        }
+      }
+    });
+
+    // ICE candidate received
+    socket.on("ice-candidate", async ({ candidate }) => {
+      if (candidate) {
+        if (remoteDescriptionSet.current) {
+          try {
+            await pc.addIceCandidate(new RTCIceCandidate(candidate));
+          } catch (err) {
+            console.error("Error adding ICE candidate:", err);
+          }
+        } else {
+          iceCandidateQueue.current.push(candidate);
+        }
+      }
+    });
+
+    // Cleanup
     const cleanup = () => {
-      if (localStream) localStream.getTracks().forEach((t) => t.stop());
+      if (localStream) localStream.getTracks().forEach(t => t.stop());
       if (pc) pc.close();
-      navigate("/"); // Redirect to dashboard
+      navigate("/");
     };
 
     return () => {
       cleanup();
-      socket.off("call-start");
-      socket.off("webrtc-answer");
-      socket.off("webrtc-candidate");
-      socket.off("end-call");
+      socket.off("peer-ready");
+      socket.off("offer");
+      socket.off("answer");
+      socket.off("ice-candidate");
     };
-  }, [bookingId, studentUsername, userType, userName, navigate]);
+  }, [roomId, userType, userName, navigate]);
 
   const endCall = () => {
-    socket.emit("end-call", { bookingId });
+    socket.emit("leave-room", { roomId, username: userName });
     setStatus("Ending call...");
+    navigate("/");
   };
 
   return (
     <div className="d-flex flex-column align-items-center justify-content-center" style={{ minHeight: "100vh", background: "#f0f2f5" }}>
-      {error && <div className="alert alert-danger">{error}</div>}
       <h4>{status}</h4>
       <div className="d-flex mt-3 gap-3">
         <video ref={localVideoRef} autoPlay playsInline muted style={{ width: "300px", borderRadius: "8px", background: "black" }} />
@@ -3761,3 +4785,313 @@ const VideoCall = () => {
 };
 
 export default VideoCall;
+
+
+
+
+
+
+// -------------------------------yeah with backend changes ke saath run kiya hai
+
+// import React, { useEffect, useRef, useState } from "react";
+// import { useNavigate, useLocation } from "react-router-dom";
+// import { socket } from "./socket";
+
+// const VideoCall = () => {
+//   const localVideoRef = useRef(null);
+//   const remoteVideoRef = useRef(null);
+//   const pcRef = useRef(null);
+//   const [status, setStatus] = useState("Initializing...");
+//   const navigate = useNavigate();
+//   const location = useLocation();
+//   const remoteDescriptionSet = useRef(false);
+//   const iceCandidateQueue = useRef([]);
+//   const peerSocketId = useRef(null);
+
+//   const query = new URLSearchParams(location.search);
+//   const roomId = query.get("roomId");
+//   const userType = query.get("type");
+//   const userName = query.get("name");
+
+//   useEffect(() => {
+//     let localStream;
+//     const pc = new RTCPeerConnection({
+//       iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+//     });
+//     pcRef.current = pc;
+
+//     // 1️⃣ Get local media
+//     navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+//       .then(stream => {
+//         localStream = stream;
+//         localVideoRef.current.srcObject = stream;
+//         stream.getTracks().forEach(track => pc.addTrack(track, stream));
+
+//         // Only now announce readiness
+//         socket.emit("peer-ready", { roomId, userType, username: userName });
+//         setStatus("Waiting for peer...");
+//       })
+//       .catch(err => {
+//         console.error("Media error:", err);
+//         setStatus("Failed to access camera/mic.");
+//       });
+
+//     // 2️⃣ Remote tracks
+//     pc.ontrack = event => {
+//       remoteVideoRef.current.srcObject = event.streams[0];
+//       setStatus("Call connected!");
+//     };
+
+//     // 3️⃣ ICE candidates
+//     pc.onicecandidate = event => {
+//       if (event.candidate && peerSocketId.current) {
+//         socket.emit("ice-candidate", { candidate: event.candidate, to: peerSocketId.current, roomId });
+//       }
+//     };
+
+//     // 4️⃣ Join room
+//     socket.emit("join-room", { roomId, username: userName, userType });
+
+//     // 5️⃣ Peer ready: teacher creates offer, student just waits
+//     socket.on("peer-ready", ({ to }) => {
+//       peerSocketId.current = to; // store the peer to send offer/ICE
+//       if (userType === "teacher") {
+//         createAndSendOffer(to);
+//       }
+//     });
+
+//     // 6️⃣ Offer received
+//     socket.on("offer", async ({ sdp, from }) => {
+//       peerSocketId.current = from;
+//       if (!remoteDescriptionSet.current) {
+//         await pc.setRemoteDescription(new RTCSessionDescription(sdp));
+//         const answer = await pc.createAnswer();
+//         await pc.setLocalDescription(answer);
+//         socket.emit("answer", { sdp: answer, to: from, roomId });
+//         remoteDescriptionSet.current = true;
+
+//         // Add queued ICE
+//         for (let c of iceCandidateQueue.current) {
+//           await pc.addIceCandidate(new RTCIceCandidate(c));
+//         }
+//         iceCandidateQueue.current = [];
+//       }
+//     });
+
+//     // 7️⃣ Answer received
+//     socket.on("answer", async ({ sdp }) => {
+//       if (!remoteDescriptionSet.current) {
+//         await pc.setRemoteDescription(new RTCSessionDescription(sdp));
+//         remoteDescriptionSet.current = true;
+
+//         // Add queued ICE
+//         for (let c of iceCandidateQueue.current) {
+//           await pc.addIceCandidate(new RTCIceCandidate(c));
+//         }
+//         iceCandidateQueue.current = [];
+//       }
+//     });
+
+//     // 8️⃣ ICE candidate received
+//     socket.on("ice-candidate", async ({ candidate }) => {
+//       if (candidate) {
+//         if (remoteDescriptionSet.current) {
+//           await pc.addIceCandidate(new RTCIceCandidate(candidate));
+//         } else {
+//           iceCandidateQueue.current.push(candidate);
+//         }
+//       }
+//     });
+
+//     // Cleanup
+//     const cleanup = () => {
+//       if (localStream) localStream.getTracks().forEach(t => t.stop());
+//       if (pc) pc.close();
+//       navigate("/");
+//     };
+
+//     return () => {
+//       cleanup();
+//       socket.off("peer-ready");
+//       socket.off("offer");
+//       socket.off("answer");
+//       socket.off("ice-candidate");
+//     };
+//   }, [roomId, userType, userName, navigate]);
+
+//   const createAndSendOffer = async (to) => {
+//     try {
+//       const pc = pcRef.current;
+//       const offer = await pc.createOffer();
+//       await pc.setLocalDescription(offer);
+//       socket.emit("offer", { sdp: offer, to, roomId });
+//     } catch (err) {
+//       console.error("Error creating offer:", err);
+//     }
+//   };
+
+//   const endCall = () => {
+//     socket.emit("leave-room", { roomId, username: userName });
+//     setStatus("Ending call...");
+//     navigate("/");
+//   };
+
+//   return (
+//     <div className="d-flex flex-column align-items-center justify-content-center" style={{ minHeight: "100vh", background: "#f0f2f5" }}>
+//       <h4>{status}</h4>
+//       <div className="d-flex mt-3 gap-3">
+//         <video ref={localVideoRef} autoPlay playsInline muted style={{ width: "300px", borderRadius: "8px", background: "black" }} />
+//         <video ref={remoteVideoRef} autoPlay playsInline style={{ width: "300px", borderRadius: "8px", background: "black" }} />
+//       </div>
+//       <button className="btn btn-danger mt-3" onClick={endCall}>End Call</button>
+//     </div>
+//   );
+// };
+
+// export default VideoCall;
+
+
+
+
+
+// import React, { useEffect, useRef, useState } from "react";
+// import { socket } from "./socket"; // your socket.io-client instance
+// import { useParams } from "react-router-dom";
+
+// const VideoCall = ({ userType, username }) => {
+//   const { roomId } = useParams(); // or pass roomId as prop
+//   const localVideoRef = useRef();
+//   const remoteVideoRef = useRef();
+//   const pcRef = useRef(null);
+
+//   const [stream, setStream] = useState(null);
+//   const [remoteStream, setRemoteStream] = useState(null);
+//   const [peerReady, setPeerReady] = useState(false);
+
+//   const servers = {
+//     iceServers: [
+//       { urls: "stun:stun.l.google.com:19302" },
+//       // add TURN if needed
+//     ],
+//   };
+
+//   useEffect(() => {
+//     const init = async () => {
+//       try {
+//         // 1️⃣ get local media
+//         const localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+//         setStream(localStream);
+//         localVideoRef.current.srcObject = localStream;
+
+//         // 2️⃣ create peer connection
+//         const pc = new RTCPeerConnection(servers);
+//         pcRef.current = pc;
+
+//         // 3️⃣ add tracks to peer connection
+//         localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+
+//         // 4️⃣ handle remote tracks
+//         const remote = new MediaStream();
+//         setRemoteStream(remote);
+//         remoteVideoRef.current.srcObject = remote;
+
+//         pc.ontrack = (event) => {
+//           event.streams[0].getTracks().forEach(track => remote.addTrack(track));
+//         };
+
+//         // 5️⃣ handle ICE candidates
+//         pc.onicecandidate = (event) => {
+//           if (event.candidate) {
+//             socket.emit("ice-candidate", {
+//               to: peerIdRef.current,
+//               candidate: event.candidate,
+//               roomId,
+//             });
+//           }
+//         };
+
+//         // 6️⃣ join room
+//         socket.emit(userType === "teacher" ? "teacher-online" : "student-online", { username });
+//         socket.emit("join-room", { roomId, username, userType });
+
+//       } catch (err) {
+//         console.error("Media init error:", err);
+//       }
+//     };
+
+//     init();
+
+//     return () => {
+//       pcRef.current?.close();
+//       stream?.getTracks().forEach(track => track.stop());
+//     };
+//   }, []);
+
+//   const peerIdRef = useRef(null);
+
+//   // --- signaling ---
+//   useEffect(() => {
+//     // peer-ready event from backend
+//     socket.on("peer-ready", ({ to }) => {
+//       peerIdRef.current = to;
+//       setPeerReady(true);
+//       createOffer();
+//     });
+
+//     socket.on("offer", async ({ sdp, from }) => {
+//       peerIdRef.current = from;
+//       await pcRef.current.setRemoteDescription(new RTCSessionDescription(sdp));
+//       const answer = await pcRef.current.createAnswer();
+//       await pcRef.current.setLocalDescription(answer);
+//       socket.emit("answer", { sdp: answer, to: from, roomId });
+//     });
+
+//     socket.on("answer", async ({ sdp }) => {
+//       await pcRef.current.setRemoteDescription(new RTCSessionDescription(sdp));
+//     });
+
+//     socket.on("ice-candidate", async ({ candidate }) => {
+//       if (candidate) {
+//         try {
+//           await pcRef.current.addIceCandidate(new RTCIceCandidate(candidate));
+//         } catch (err) {
+//           console.error("Add ICE candidate error:", err);
+//         }
+//       }
+//     });
+
+//     return () => {
+//       socket.off("peer-ready");
+//       socket.off("offer");
+//       socket.off("answer");
+//       socket.off("ice-candidate");
+//     };
+//   }, []);
+
+//   // --- create offer ---
+//   const createOffer = async () => {
+//     if (!peerIdRef.current) return;
+//     try {
+//       const offer = await pcRef.current.createOffer();
+//       await pcRef.current.setLocalDescription(offer);
+//       socket.emit("offer", { sdp: offer, to: peerIdRef.current, roomId });
+//     } catch (err) {
+//       console.error("Offer error:", err);
+//     }
+//   };
+
+//   return (
+//     <div style={{ display: "flex", gap: "10px" }}>
+//       <div>
+//         <h3>Local ({username})</h3>
+//         <video ref={localVideoRef} autoPlay playsInline muted style={{ width: "300px" }} />
+//       </div>
+//       <div>
+//         <h3>Remote</h3>
+//         <video ref={remoteVideoRef} autoPlay playsInline style={{ width: "300px" }} />
+//       </div>
+//     </div>
+//   );
+// };
+
+// export default VideoCall;

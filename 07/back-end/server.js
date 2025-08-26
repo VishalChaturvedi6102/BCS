@@ -2444,6 +2444,143 @@ app.get("/api/courses/by-teacher/:username", async (req, res) => {
   }
 });
 
+
+// --------------------------teachers se related code on student's dashboard-----------------------
+// new frontend api access points
+// Add these endpoints to your server.js
+
+// Get recommended tutors (for dashboard)
+// Get recommended tutors (for dashboard)
+app.get('/api/tutors/recommended', async (req, res) => {
+  try {
+    // First, just get the basic teacher data without any complex joins
+    const [rows] = await db.query(`
+      SELECT * FROM teacherprofile 
+      ORDER BY id DESC 
+      LIMIT 8
+    `);
+    
+    // Format the response
+    const tutors = rows.map(tutor => ({
+      id: tutor.id,
+      name: tutor.namer,
+      username: tutor.username,
+      subject: tutor.subjects,
+      experience: tutor.exp,
+      rating: (4.5 + Math.random() * 0.5).toFixed(1),
+      reviews: Math.floor(Math.random() * 50) + 10,
+      hourlyRate: `₹${Math.floor(500 + Math.random() * 1500)}/hr`,
+      responseTime: ['1 hour', '2 hours', '3 hours', '4 hours'][Math.floor(Math.random() * 4)],
+      description: tutor.about || tutor.oneline || "Experienced tutor",
+      profileImage: `https://randomuser.me/api/portraits/${Math.random() > 0.5 ? 'men' : 'women'}/${Math.floor(Math.random() * 50)}.jpg`,
+      isOnline: Math.random() > 0.3,
+      lang: tutor.lang,
+      about: tutor.about,
+      education: tutor.education,
+      level: tutor.level
+    }));
+    
+    res.json(tutors);
+  } catch (err) {
+    console.error('GET /api/tutors/recommended error:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// Get tutors by language
+app.get('/api/tutors', async (req, res) => {
+  try {
+    const { lang } = req.query;
+    if (!lang) return res.status(400).json({ message: 'Language is required' });
+
+    const [rows] = await db.query(`
+      SELECT * FROM teacherprofile 
+      WHERE LOWER(lang) LIKE ? OR LOWER(subjects) LIKE ?
+      ORDER BY id DESC
+    `, [`%${lang.toLowerCase()}%`, `%${lang.toLowerCase()}%`]);
+    
+    const tutors = rows.map(tutor => ({
+      id: tutor.id,
+      name: tutor.namer,
+      username: tutor.username,
+      subject: tutor.subjects,
+      experience: tutor.exp,
+      rating: (4.5 + Math.random() * 0.5).toFixed(1),
+      reviews: Math.floor(Math.random() * 50) + 10,
+      hourlyRate: `₹${Math.floor(500 + Math.random() * 1500)}/hr`,
+      responseTime: ['1 hour', '2 hours', '3 hours', '4 hours'][Math.floor(Math.random() * 4)],
+      description: tutor.about || tutor.oneline || "Experienced tutor",
+      profileImage: `https://randomuser.me/api/portraits/${Math.random() > 0.5 ? 'men' : 'women'}/${Math.floor(Math.random() * 50)}.jpg`,
+      isOnline: Math.random() > 0.3,
+      lang: tutor.lang,
+      about: tutor.about,
+      education: tutor.education,
+      level: tutor.level,
+      oneline: tutor.oneline
+    }));
+    
+    res.json(tutors);
+  } catch (err) {
+    console.error('GET /api/tutors error:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// Get tutor by username
+app.get('/api/tutors/username/:username', async (req, res) => {
+  try {
+    const { username } = req.params;
+    
+    const [rows] = await db.query(`
+      SELECT * FROM teacherprofile 
+      WHERE username = ?
+    `, [username]);
+    
+    if (rows.length === 0) return res.status(404).json({ message: 'Tutor not found' });
+    
+    const tutor = rows[0];
+    const formattedTutor = {
+      id: tutor.id,
+      name: tutor.namer,
+      username: tutor.username,
+      subject: tutor.subjects,
+      experience: tutor.exp,
+      rating: (4.5 + Math.random() * 0.5).toFixed(1),
+      reviews: Math.floor(Math.random() * 50) + 10,
+      hourlyRate: `₹${Math.floor(500 + Math.random() * 1500)}/hr`,
+      responseTime: ['1 hour', '2 hours', '3 hours', '4 hours'][Math.floor(Math.random() * 4)],
+      description: tutor.about || tutor.oneline || "Experienced tutor",
+      profileImage: `https://randomuser.me/api/portraits/${Math.random() > 0.5 ? 'men' : 'women'}/${Math.floor(Math.random() * 50)}.jpg`,
+      isOnline: Math.random() > 0.3,
+      lang: tutor.lang,
+      about: tutor.about,
+      education: tutor.education,
+      level: tutor.level,
+      oneline: tutor.oneline,
+      timezone: tutor.timezone
+    };
+    
+    res.json(formattedTutor);
+  } catch (err) {
+    console.error('GET /api/tutors/username error:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+// --------------------------------video call featutes ka code
+
 // ----- Signaling & Socket.IO set up -----
 const io = new Server(server, {
   cors: {
@@ -2552,36 +2689,134 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Offer/Answer/Candidate must contain `to` (socketId) for targeted routing
+  // // Offer/Answer/Candidate must contain `to` (socketId) for targeted routing
+  // socket.on('offer', (data) => {
+  //   try {
+  //     const { to, sdp, from, roomId } = data;
+  //     if (!to) return console.warn('offer missing `to`', data);
+  //     io.to(to).emit('offer', { sdp, from: from || socket.id, roomId });
+  //   } catch (err) {
+  //     console.error('offer handler error:', err);
+  //   }
+  // });
+
+  // socket.on('answer', (data) => {
+  //   try {
+  //     const { to, sdp, from, roomId } = data;
+  //     if (!to) return console.warn('answer missing `to`', data);
+  //     io.to(to).emit('answer', { sdp, from: from || socket.id, roomId });
+  //   } catch (err) {
+  //     console.error('answer handler error:', err);
+  //   }
+  // });
+
+  // socket.on('ice-candidate', (data) => {
+  //   try {
+  //     const { to, candidate, from, roomId } = data;
+  //     if (!to) return console.warn('ice-candidate missing `to`', data);
+  //     io.to(to).emit('ice-candidate', { candidate, from: from || socket.id, roomId });
+  //   } catch (err) {
+  //     console.error('ice-candidate handler error:', err);
+  //   }
+  // });
+
+
+
+
+  // -------------------------------------------yeah working tha + but with issues;
   socket.on('offer', (data) => {
-    try {
-      const { to, sdp, from, roomId } = data;
-      if (!to) return console.warn('offer missing `to`', data);
-      io.to(to).emit('offer', { sdp, from: from || socket.id, roomId });
-    } catch (err) {
-      console.error('offer handler error:', err);
+  try {
+    let { to, sdp, from, roomId } = data;
+    if (!to) {
+      const peers = getPeers(roomId, socket.id);
+      if (peers.length === 1) to = peers[0];
+      else return console.warn('offer missing `to` and multiple peers', data);
     }
-  });
+    io.to(to).emit('offer', { sdp, from: from || socket.id, roomId });
+  } catch (err) {
+    console.error('offer handler error:', err);
+  }
+});
 
-  socket.on('answer', (data) => {
-    try {
-      const { to, sdp, from, roomId } = data;
-      if (!to) return console.warn('answer missing `to`', data);
-      io.to(to).emit('answer', { sdp, from: from || socket.id, roomId });
-    } catch (err) {
-      console.error('answer handler error:', err);
+socket.on('answer', (data) => {
+  try {
+    let { to, sdp, from, roomId } = data;
+    if (!to) {
+      const peers = getPeers(roomId, socket.id);
+      if (peers.length === 1) to = peers[0];
+      else return console.warn('answer missing `to` and multiple peers', data);
     }
-  });
+    io.to(to).emit('answer', { sdp, from: from || socket.id, roomId });
+  } catch (err) {
+    console.error('answer handler error:', err);
+  }
+});
 
-  socket.on('ice-candidate', (data) => {
-    try {
-      const { to, candidate, from, roomId } = data;
-      if (!to) return console.warn('ice-candidate missing `to`', data);
-      io.to(to).emit('ice-candidate', { candidate, from: from || socket.id, roomId });
-    } catch (err) {
-      console.error('ice-candidate handler error:', err);
+socket.on('ice-candidate', (data) => {
+  try {
+    let { to, candidate, from, roomId } = data;
+    if (!to) {
+      const peers = getPeers(roomId, socket.id);
+      if (peers.length === 1) to = peers[0];
+      else return console.warn('ice-candidate missing `to` and multiple peers', data);
     }
-  });
+    io.to(to).emit('ice-candidate', { candidate, from: from || socket.id, roomId });
+  } catch (err) {
+    console.error('ice-candidate handler error:', err);
+  }
+});
+
+
+
+
+
+
+// naya wala
+
+// socket.on('offer', (data) => {
+//   try {
+//     let { to, sdp, from, roomId } = data;
+//     if (!to) {
+//       const peers = getPeers(roomId, socket.id);
+//       if (peers.length === 1) to = peers[0];
+//       else return console.warn('offer missing `to` and multiple peers', data);
+//     }
+//     io.to(to).emit('offer', { sdp, from: from || socket.id, roomId });
+//   } catch (err) {
+//     console.error('offer handler error:', err);
+//   }
+// });
+
+// socket.on('answer', (data) => {
+//   try {
+//     let { to, sdp, from, roomId } = data;
+//     if (!to) {
+//       const peers = getPeers(roomId, socket.id);
+//       if (peers.length === 1) to = peers[0];
+//       else return console.warn('answer missing `to` and multiple peers', data);
+//     }
+//     io.to(to).emit('answer', { sdp, from: from || socket.id, roomId });
+//   } catch (err) {
+//     console.error('answer handler error:', err);
+//   }
+// });
+
+// socket.on('ice-candidate', (data) => {
+//   try {
+//     let { to, candidate, from, roomId } = data;
+//     if (!to) {
+//       const peers = getPeers(roomId, socket.id);
+//       if (peers.length === 1) to = peers[0];
+//       else return console.warn('ice-candidate missing `to` and multiple peers', data);
+//     }
+//     io.to(to).emit('ice-candidate', { candidate, from: from || socket.id, roomId });
+//   } catch (err) {
+//     console.error('ice-candidate handler error:', err);
+//   }
+// });
+
+
+
 
   socket.on('toggle-audio', (data) => {
     try {
@@ -2664,22 +2899,85 @@ io.on('connection', (socket) => {
 }); // io.on connection
 
 // ----- REST endpoints for call management -----
+// app.post("/start-call", async (req, res) => {
+//   try {
+//     const { tutorUsername, studentUsername, bookingId } = req.body;
+//     if (!tutorUsername || !studentUsername || !bookingId) return res.status(400).json({ message: "Missing required fields" });
+//     const [bookingRows] = await db.query("SELECT b.* FROM bookings b WHERE b.id = ? AND b.tutorUsername = ?", [bookingId, tutorUsername]);
+//     if (!bookingRows.length) return res.status(404).json({ message: "Booking not found" });
+//     const roomId = uuidv4();
+//     await db.query("UPDATE bookings SET roomId = ?, status = 'accepted' WHERE id = ?", [roomId, bookingId]);
+
+//     // prepare activeCalls entry
+//     activeCalls.set(roomId, { participants: [], startTime: new Date(), bookingId });
+
+//     // notify student if online
+//     const studentOnlineInfo = onlineStudents[studentUsername];
+//     if (studentOnlineInfo) {
+//       io.to(studentOnlineInfo.socketId).emit("incoming-call", { roomId, tutorUsername, bookingId, message: bookingRows[0].message });
+//       console.log(`Notified student ${studentUsername} about incoming call`);
+//     }
+
+//     return res.json({ message: "Call started", roomId, studentOnline: !!studentOnlineInfo });
+//   } catch (err) {
+//     console.error("POST /start-call error:", err);
+//     return res.status(500).json({ message: "Server error", error: err.message });
+//   }
+// });
+
+// app.get("/get-call/:bookingId", async (req, res) => {
+//   try {
+//     const { bookingId } = req.params;
+//     const [rows] = await db.query("SELECT roomId, status FROM bookings WHERE id = ?", [bookingId]);
+//     if (!rows.length) return res.status(404).json({ message: "Booking not found" });
+//     if (!rows[0].roomId || rows[0].status !== 'accepted') return res.status(404).json({ message: "No active call" });
+//     return res.json({ roomId: rows[0].roomId, status: rows[0].status });
+//   } catch (err) {
+//     console.error("GET /get-call error:", err);
+//     return res.status(500).json({ message: "Server error" });
+//   }
+// });
+
+
+
+
 app.post("/start-call", async (req, res) => {
   try {
     const { tutorUsername, studentUsername, bookingId } = req.body;
-    if (!tutorUsername || !studentUsername || !bookingId) return res.status(400).json({ message: "Missing required fields" });
-    const [bookingRows] = await db.query("SELECT b.* FROM bookings b WHERE b.id = ? AND b.tutorUsername = ?", [bookingId, tutorUsername]);
+    if (!tutorUsername || !studentUsername || !bookingId)
+      return res.status(400).json({ message: "Missing required fields" });
+
+    // Fetch booking first
+    const [bookingRows] = await db.query(
+      "SELECT b.* FROM bookings b WHERE b.id = ? AND b.tutorUsername = ?",
+      [bookingId, tutorUsername]
+    );
     if (!bookingRows.length) return res.status(404).json({ message: "Booking not found" });
-    const roomId = uuidv4();
-    await db.query("UPDATE bookings SET roomId = ?, status = 'accepted' WHERE id = ?", [roomId, bookingId]);
+
+    // Use existing roomId if present, else create new
+    let roomId = bookingRows[0].roomId;
+    if (!roomId) {
+      roomId = uuidv4();
+      await db.query(
+        "UPDATE bookings SET roomId = ?, status = 'accepted' WHERE id = ?",
+        [roomId, bookingId]
+      );
+    }
 
     // prepare activeCalls entry
-    activeCalls.set(roomId, { participants: [], startTime: new Date(), bookingId });
+    if (!activeCalls.has(roomId)) {
+      activeCalls.set(roomId, { participants: [], startTime: new Date(), bookingId });
+    }
 
     // notify student if online
     const studentOnlineInfo = onlineStudents[studentUsername];
     if (studentOnlineInfo) {
-      io.to(studentOnlineInfo.socketId).emit("incoming-call", { roomId, tutorUsername, bookingId, message: bookingRows[0].message });
+      io.to(studentOnlineInfo.socketId).emit("incoming-call", {
+        roomId,
+        tutorUsername,
+        bookingId,
+        message: bookingRows[0].message,
+      });
       console.log(`Notified student ${studentUsername} about incoming call`);
     }
 
@@ -2690,18 +2988,7 @@ app.post("/start-call", async (req, res) => {
   }
 });
 
-app.get("/get-call/:bookingId", async (req, res) => {
-  try {
-    const { bookingId } = req.params;
-    const [rows] = await db.query("SELECT roomId, status FROM bookings WHERE id = ?", [bookingId]);
-    if (!rows.length) return res.status(404).json({ message: "Booking not found" });
-    if (!rows[0].roomId || rows[0].status !== 'accepted') return res.status(404).json({ message: "No active call" });
-    return res.json({ roomId: rows[0].roomId, status: rows[0].status });
-  } catch (err) {
-    console.error("GET /get-call error:", err);
-    return res.status(500).json({ message: "Server error" });
-  }
-});
+
 
 app.post("/end-call", async (req, res) => {
   try {
@@ -2766,6 +3053,52 @@ app.get('/health', (req, res) => {
     activeCalls: activeCalls.size
   });
 });
+
+
+
+
+// ---------------------------------------yaha per mera new contact tutor request ka code hai------------
+
+app.post("/requests", (req, res) => {
+  const { studentUsername, tutorUsername, message } = req.body;
+  const sql = "INSERT INTO requests (studentUsername, tutorUsername, message) VALUES (?, ?, ?)";
+  db.query(sql, [studentUsername, tutorUsername, message], (err, result) => {
+    if (err) return res.status(500).json({ error: err });
+    res.json({ success: true, id: result.insertId });
+  });
+});
+
+app.get("/requests/student/:username", (req, res) => {
+  const sql = "SELECT * FROM requests WHERE studentUsername = ?";
+  db.query(sql, [req.params.username], (err, results) => {
+    if (err) return res.status(500).json({ error: err });
+    res.json(results);
+  });
+});
+
+app.get("/requests/tutor/:username", (req, res) => {
+  const sql = "SELECT * FROM requests WHERE tutorUsername = ?";
+  db.query(sql, [req.params.username], (err, results) => {
+    if (err) return res.status(500).json({ error: err });
+    res.json(results);
+  });
+});
+
+app.put("/requests/:id/:action", (req, res) => {
+  const { id, action } = req.params;
+  if (!["accept", "reject"].includes(action)) {
+    return res.status(400).json({ error: "Invalid action" });
+  }
+  const status = action === "accept" ? "Accepted" : "Rejected";
+  const sql = "UPDATE requests SET status = ? WHERE id = ?";
+  db.query(sql, [status, id], (err, result) => {
+    if (err) return res.status(500).json({ error: err });
+    res.json({ success: true });
+  });
+});
+
+
+
 
 // fallback
 app.use((req, res) => res.status(404).json({ message: "Endpoint not found" }));

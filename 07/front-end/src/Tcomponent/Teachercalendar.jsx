@@ -5068,6 +5068,644 @@
 
 
 
+// import React, { useState, useEffect, useRef, useCallback } from "react";
+// import axios from "axios";
+// import FullCalendar from "@fullcalendar/react";
+// import dayGridPlugin from "@fullcalendar/daygrid";
+// import timeGridPlugin from "@fullcalendar/timegrid";
+// import interactionPlugin from "@fullcalendar/interaction";
+// import { Container, Card, Button, Spinner, Modal, Form, Alert } from "react-bootstrap";
+// import { useNavigate } from "react-router-dom";
+// import { socket } from "../socket";
+
+// const TeacherCalendar = () => {
+//   const [events, setEvents] = useState([]);
+//   const [loading, setLoading] = useState(true);
+//   const [hoveredEvent, setHoveredEvent] = useState(null);
+//   const [popupPos, setPopupPos] = useState({ x: 0, y: 0 });
+//   const [showAcceptModal, setShowAcceptModal] = useState(false);
+//   const [message, setMessage] = useState("");
+//   const [selectedEventId, setSelectedEventId] = useState(null);
+//   const [popupLocked, setPopupLocked] = useState(false);
+//   const [onlineStatus, setOnlineStatus] = useState({});
+//   const [error, setError] = useState("");
+//   const [success, setSuccess] = useState("");
+//   const hideTimer = useRef(null);
+
+//   const navigate = useNavigate();
+//   const tutorUsername = sessionStorage.getItem("tutorUsername");
+//   const token = sessionStorage.getItem("token");
+
+//   // Fetch bookings
+//   const fetchBookings = useCallback(async () => {
+//     try {
+//       setError("");
+//       const res = await axios.get(`http://localhost:4000/bookings?username=${tutorUsername}`, {
+//         headers: { Authorization: `Bearer ${token}` },
+//         timeout: 10000,
+//       });
+
+//       if (Array.isArray(res.data)) {
+//         setEvents(
+//           res.data.map((b) => ({
+//             id: b.id,
+//             title: b.studentUsername,
+//             start: b.start,
+//             end: b.end,
+//             status: b.status || "pending",
+//             studentUsername: b.studentUsername,
+//             teacherMessage: b.message || null,
+//             roomId: b.roomId || null,
+//             studentSocketId: b.studentSocketId || null,
+//           }))
+//         );
+//       }
+//     } catch (err) {
+//       console.error("Error fetching bookings:", err);
+//       setError(err.code === "ECONNABORTED" ? "Request timed out." : "Failed to load bookings.");
+//     } finally {
+//       setLoading(false);
+//     }
+//   }, [tutorUsername, token]);
+
+//   useEffect(() => {
+//     fetchBookings();
+//     const interval = setInterval(fetchBookings, 30000);
+//     return () => clearInterval(interval);
+//   }, [fetchBookings]);
+
+//   // Socket handlers
+//   useEffect(() => {
+//     const handleStudentOnline = (data) => {
+//       setOnlineStatus((prev) => ({ ...prev, [data.username]: true }));
+//       setEvents((prev) =>
+//         prev.map((event) =>
+//           event.studentUsername === data.username
+//             ? { ...event, studentSocketId: data.socketId }
+//             : event
+//         )
+//       );
+//     };
+
+//     const handleUserDisconnected = (socketId) => {
+//       setEvents((prev) =>
+//         prev.map((event) =>
+//           event.studentSocketId === socketId ? { ...event, studentSocketId: null } : event
+//         )
+//       );
+//       setOnlineStatus((prev) => {
+//         const newStatus = { ...prev };
+//         for (const username in newStatus) {
+//           const event = events.find((e) => e.studentUsername === username);
+//           if (event && event.studentSocketId === socketId) newStatus[username] = false;
+//         }
+//         return newStatus;
+//       });
+//     };
+
+//     socket.on("student-online", handleStudentOnline);
+//     socket.on("user-disconnected", handleUserDisconnected);
+//     socket.on("connect_error", (err) => setError("Socket connection failed"));
+
+//     if (socket.connected) socket.emit("teacher-online", tutorUsername);
+//     else socket.once("connect", () => socket.emit("teacher-online", tutorUsername));
+
+//     return () => {
+//       socket.off("student-online", handleStudentOnline);
+//       socket.off("user-disconnected", handleUserDisconnected);
+//     };
+//   }, [tutorUsername, events]);
+
+//   // Start call
+//   const handleStartCall = async (bookingId, studentUsername) => {
+//     try {
+//       const res = await axios.post(
+//         "http://localhost:4000/start-call",
+//         { tutorUsername, studentUsername, bookingId },
+//         { headers: { Authorization: `Bearer ${token}` }, timeout: 5000 }
+//       );
+
+//       const roomId = res.data.roomId;
+//       if (!roomId) throw new Error("No roomId returned from server");
+
+//       setEvents((prev) => prev.map((e) => (e.id === bookingId ? { ...e, roomId } : e)));
+
+//       if (onlineStatus[studentUsername] && socket.connected) {
+//         socket.emit("incoming-call", { roomId, tutorUsername, bookingId });
+//       }
+
+//       navigate(
+//         `/video-call?bookingId=${bookingId}&studentUsername=${studentUsername}&type=teacher&name=${encodeURIComponent(
+//           tutorUsername
+//         )}`
+//       );
+//     } catch (err) {
+//       console.error("Start call error:", err);
+//       setError("Failed to start call.");
+//     }
+//   };
+
+//   // Accept booking
+//   const handleAccept = async () => {
+//     try {
+//       await axios.post(
+//         `http://localhost:4000/teacher/requests/${selectedEventId}/decision`,
+//         { decision: "accepted", message },
+//         { headers: { Authorization: `Bearer ${token}` }, timeout: 5000 }
+//       );
+
+//       setEvents((prev) =>
+//         prev.map((e) => (e.id === selectedEventId ? { ...e, status: "accepted", teacherMessage: message } : e))
+//       );
+
+//       setSuccess("Booking accepted!");
+//       setShowAcceptModal(false);
+//       setMessage("");
+
+//       if (socket.connected) {
+//         socket.emit("booking-update", { bookingId: selectedEventId, status: "accepted", message });
+//       }
+//     } catch (err) {
+//       console.error("Accept error:", err);
+//       setError("Failed to accept booking.");
+//     }
+//   };
+
+//   // Reject booking
+//   const handleReject = async (id) => {
+//     if (!window.confirm("Reject this booking?")) return;
+//     try {
+//       await axios.post(
+//         `http://localhost:4000/teacher/requests/${id}/decision`,
+//         { decision: "rejected" },
+//         { headers: { Authorization: `Bearer ${token}` }, timeout: 5000 }
+//       );
+
+//       setEvents((prev) => prev.filter((e) => e.id !== id));
+//       setSuccess("Booking rejected.");
+
+//       if (socket.connected) socket.emit("booking-update", { bookingId: id, status: "rejected" });
+//     } catch (err) {
+//       console.error("Reject error:", err);
+//       setError("Failed to reject booking.");
+//     }
+//   };
+
+//   // Event content
+//   const eventContent = (info) => {
+//     const { status, studentUsername } = info.event.extendedProps;
+//     const isOnline = onlineStatus[studentUsername];
+//     const icons = { pending: "⏳", accepted: "✅", rejected: "❌" };
+//     const colors = { pending: "#ffc107", accepted: "#28a745", rejected: "#dc3545" };
+
+//     return (
+//       <div
+//         style={{
+//           backgroundColor: colors[status] || "#6c757d",
+//           color: "white",
+//           padding: "4px 6px",
+//           borderRadius: "4px",
+//           fontWeight: 500,
+//           fontSize: "0.9rem",
+//           textAlign: "center",
+//           display: "flex",
+//           justifyContent: "space-between",
+//         }}
+//       >
+//         <span>{icons[status] || "❓"} {info.event.title}</span>
+//         <span style={{ fontSize: "0.75rem" }}>{isOnline ? "🟢" : "🔴"}</span>
+//       </div>
+//     );
+//   };
+
+//   // Hover/click popup
+//   const onEventEnter = (info) => {
+//     if (hoveredEvent?.id !== info.event.id) setPopupLocked(false);
+//     if (!popupLocked) {
+//       if (hideTimer.current) clearTimeout(hideTimer.current);
+//       setHoveredEvent(info.event);
+//       setPopupPos({ x: info.jsEvent.pageX, y: info.jsEvent.pageY });
+//     }
+//   };
+//   const onEventLeave = () => { if (!popupLocked) hideTimer.current = setTimeout(() => setHoveredEvent(null), 300); };
+//   const onPopupEnter = () => { if (hideTimer.current) clearTimeout(hideTimer.current); };
+//   const onPopupLeave = () => { if (!popupLocked) hideTimer.current = setTimeout(() => setHoveredEvent(null), 300); };
+//   const onEventClick = (info) => {
+//     setHoveredEvent(info.event);
+//     setPopupPos({ x: info.jsEvent.pageX, y: info.jsEvent.pageY });
+//     setSelectedEventId(info.event.id);
+//     setPopupLocked(true);
+//   };
+
+//   // Auto-clear alerts
+//   useEffect(() => {
+//     if (error || success) {
+//       const timer = setTimeout(() => { setError(""); setSuccess(""); }, 5000);
+//       return () => clearTimeout(timer);
+//     }
+//   }, [error, success]);
+
+//   if (loading) return <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "100vh" }}><Spinner animation="border" /></div>;
+
+//   return (
+//     <Container fluid style={{ backgroundColor: "#f7f9fc", minHeight: "100vh", padding: "30px" }}>
+//       <Card className="shadow-sm" style={{ borderRadius: "10px", border: "none" }}>
+//         <Card.Body>
+//           <h3 className="mb-4 text-white p-3 rounded" style={{ background: "linear-gradient(90deg, #007bff, #6610f2)", textAlign: "center" }}>📅 Teacher's Session Calendar</h3>
+//           {error && <Alert variant="danger">{error}</Alert>}
+//           {success && <Alert variant="success">{success}</Alert>}
+//           <Alert variant="info"><strong>Status:</strong> 🟢 Student online | 🔴 Student offline</Alert>
+//           <FullCalendar
+//             plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+//             initialView="dayGridMonth"
+//             events={events}
+//             eventContent={eventContent}
+//             eventMouseEnter={onEventEnter}
+//             eventMouseLeave={onEventLeave}
+//             eventClick={onEventClick}
+//             height="80vh"
+//           />
+//         </Card.Body>
+//       </Card>
+
+//       {/* Popup */}
+//       {hoveredEvent && (
+//         <div style={{ position: "absolute", top: popupPos.y + 15, left: popupPos.x + 15, backgroundColor: "white", padding: "20px", border: "2px solid #0af7ff", borderRadius: "8px", zIndex: 1000 }} onMouseEnter={onPopupEnter} onMouseLeave={onPopupLeave}>
+//           <h5>{hoveredEvent.extendedProps.studentUsername}</h5>
+//           <p><strong>Time:</strong> {new Date(hoveredEvent.start).toLocaleString()} - {new Date(hoveredEvent.end).toLocaleString()}</p>
+//           <p><strong>Status:</strong> {hoveredEvent.extendedProps.status} {onlineStatus[hoveredEvent.extendedProps.studentUsername] ? "🟢" : "🔴"}</p>
+
+//           {hoveredEvent.extendedProps.status === "pending" && (
+//             <>
+//               <Button size="sm" variant="success" className="me-2 mt-2" onClick={() => setShowAcceptModal(true)}>Accept</Button>
+//               <Button size="sm" variant="danger" className="mt-2" onClick={() => handleReject(hoveredEvent.id)}>Reject</Button>
+//             </>
+//           )}
+
+//           {hoveredEvent.extendedProps.status === "accepted" && (
+//             <>
+//               {hoveredEvent.extendedProps.teacherMessage && <p><strong>Details:</strong> {hoveredEvent.extendedProps.teacherMessage}</p>}
+//               <Button size="sm" variant="primary" className="mt-2" onClick={() => handleStartCall(hoveredEvent.id, hoveredEvent.extendedProps.studentUsername)}>Start Call</Button>
+//             </>
+//           )}
+//         </div>
+//       )}
+
+//       {/* Accept Modal */}
+//       <Modal show={showAcceptModal} onHide={() => setShowAcceptModal(false)}>
+//         <Modal.Header closeButton><Modal.Title>Confirm Booking</Modal.Title></Modal.Header>
+//         <Modal.Body>
+//           <Form.Control type="text" placeholder="Enter meeting link or details" value={message} onChange={(e) => setMessage(e.target.value)} />
+//           <Form.Text>Shared with student upon acceptance.</Form.Text>
+//         </Modal.Body>
+//         <Modal.Footer>
+//           <Button variant="secondary" onClick={() => setShowAcceptModal(false)}>Cancel</Button>
+//           <Button variant="success" onClick={handleAccept}>Confirm</Button>
+//         </Modal.Footer>
+//       </Modal>
+//     </Container>
+//   );
+// };
+
+// export default TeacherCalendar;
+
+
+
+
+// import React, { useState, useEffect, useRef, useCallback } from "react";
+// import axios from "axios";
+// import FullCalendar from "@fullcalendar/react";
+// import dayGridPlugin from "@fullcalendar/daygrid";
+// import timeGridPlugin from "@fullcalendar/timegrid";
+// import interactionPlugin from "@fullcalendar/interaction";
+// import { Container, Card, Button, Spinner, Modal, Form, Alert } from "react-bootstrap";
+// import { useNavigate } from "react-router-dom";
+// import { socket } from "../socket";
+
+// const TeacherCalendar = () => {
+//   const [events, setEvents] = useState([]);
+//   const [loading, setLoading] = useState(true);
+//   const [hoveredEvent, setHoveredEvent] = useState(null);
+//   const [popupPos, setPopupPos] = useState({ x: 0, y: 0 });
+//   const [showAcceptModal, setShowAcceptModal] = useState(false);
+//   const [message, setMessage] = useState("");
+//   const [selectedEventId, setSelectedEventId] = useState(null);
+//   const [popupLocked, setPopupLocked] = useState(false);
+//   const [onlineStatus, setOnlineStatus] = useState({});
+//   const [error, setError] = useState("");
+//   const [success, setSuccess] = useState("");
+//   const hideTimer = useRef(null);
+
+//   const navigate = useNavigate();
+//   const tutorUsername = sessionStorage.getItem("tutorUsername");
+//   const token = sessionStorage.getItem("token");
+
+//   // Fetch bookings
+//   const fetchBookings = useCallback(async () => {
+//     try {
+//       setError("");
+//       const res = await axios.get(`http://localhost:4000/bookings?username=${tutorUsername}`, {
+//         headers: { Authorization: `Bearer ${token}` },
+//         timeout: 10000,
+//       });
+
+//       if (Array.isArray(res.data)) {
+//         setEvents(
+//           res.data.map((b) => ({
+//             id: b.id,
+//             title: b.studentUsername,
+//             start: b.start,
+//             end: b.end,
+//             status: b.status || "pending",
+//             studentUsername: b.studentUsername,
+//             teacherMessage: b.message || null,
+//             roomId: b.roomId || null,
+//             studentSocketId: b.studentSocketId || null,
+//           }))
+//         );
+//       }
+//     } catch (err) {
+//       console.error("Error fetching bookings:", err);
+//       setError(err.code === "ECONNABORTED" ? "Request timed out." : "Failed to load bookings.");
+//     } finally {
+//       setLoading(false);
+//     }
+//   }, [tutorUsername, token]);
+
+//   useEffect(() => {
+//     fetchBookings();
+//     const interval = setInterval(fetchBookings, 30000);
+//     return () => clearInterval(interval);
+//   }, [fetchBookings]);
+
+//   // Socket handlers
+//   useEffect(() => {
+//     const handleStudentOnline = (data) => {
+//       setOnlineStatus((prev) => ({ ...prev, [data.username]: true }));
+//       setEvents((prev) =>
+//         prev.map((event) =>
+//           event.studentUsername === data.username
+//             ? { ...event, studentSocketId: data.socketId }
+//             : event
+//         )
+//       );
+//     };
+
+//     const handleUserDisconnected = (socketId) => {
+//       setEvents((prev) =>
+//         prev.map((event) =>
+//           event.studentSocketId === socketId ? { ...event, studentSocketId: null } : event
+//         )
+//       );
+//       setOnlineStatus((prev) => {
+//         const newStatus = { ...prev };
+//         for (const username in newStatus) {
+//           const event = events.find((e) => e.studentUsername === username);
+//           if (event && event.studentSocketId === socketId) newStatus[username] = false;
+//         }
+//         return newStatus;
+//       });
+//     };
+
+//     socket.on("student-online", handleStudentOnline);
+//     socket.on("user-disconnected", handleUserDisconnected);
+//     socket.on("connect_error", (err) => setError("Socket connection failed"));
+
+//     if (socket.connected) socket.emit("teacher-online", tutorUsername);
+//     else socket.once("connect", () => socket.emit("teacher-online", tutorUsername));
+
+//     return () => {
+//       socket.off("student-online", handleStudentOnline);
+//       socket.off("user-disconnected", handleUserDisconnected);
+//     };
+//   }, [tutorUsername, events]);
+
+//   // Start call
+//   const handleStartCall = async (bookingId, studentUsername) => {
+//     try {
+//       const res = await axios.post(
+//         "http://localhost:4000/start-call",
+//         { tutorUsername, studentUsername, bookingId },
+//         { headers: { Authorization: `Bearer ${token}` }, timeout: 5000 }
+//       );
+
+//       const roomId = res.data.roomId;
+//       if (!roomId) throw new Error("No roomId returned from server");
+
+//       setEvents((prev) => prev.map((e) => (e.id === bookingId ? { ...e, roomId } : e)));
+
+//       if (onlineStatus[studentUsername] && socket.connected) {
+//         socket.emit("incoming-call", { roomId, tutorUsername, bookingId });
+//       }
+
+//       navigate(
+//         `/video-call?bookingId=${bookingId}&studentUsername=${studentUsername}&type=teacher&name=${encodeURIComponent(
+//           tutorUsername
+//         )}&roomId=${roomId}`
+//       );
+//     } catch (err) {
+//       console.error("Start call error:", err);
+//       setError("Failed to start call.");
+//     }
+//   };
+
+//   // Accept booking
+//   const handleAccept = async () => {
+//     try {
+//       await axios.post(
+//         `http://localhost:4000/teacher/requests/${selectedEventId}/decision`,
+//         { decision: "accepted", message },
+//         { headers: { Authorization: `Bearer ${token}` }, timeout: 5000 }
+//       );
+
+//       setEvents((prev) =>
+//         prev.map((e) => (e.id === selectedEventId ? { ...e, status: "accepted", teacherMessage: message } : e))
+//       );
+
+//       setSuccess("Booking accepted!");
+//       setShowAcceptModal(false);
+//       setMessage("");
+
+//       if (socket.connected) {
+//         socket.emit("booking-update", { bookingId: selectedEventId, status: "accepted", message });
+//       }
+//     } catch (err) {
+//       console.error("Accept error:", err);
+//       setError("Failed to accept booking.");
+//     }
+//   };
+
+//   // Reject booking
+//   const handleReject = async (id) => {
+//     if (!window.confirm("Reject this booking?")) return;
+//     try {
+//       await axios.post(
+//         `http://localhost:4000/teacher/requests/${id}/decision`,
+//         { decision: "rejected" },
+//         { headers: { Authorization: `Bearer ${token}` }, timeout: 5000 }
+//       );
+
+//       setEvents((prev) => prev.filter((e) => e.id !== id));
+//       setSuccess("Booking rejected.");
+
+//       if (socket.connected) socket.emit("booking-update", { bookingId: id, status: "rejected" });
+//     } catch (err) {
+//       console.error("Reject error:", err);
+//       setError("Failed to reject booking.");
+//     }
+//   };
+
+//   // Event content
+//   const eventContent = (info) => {
+//     const { status, studentUsername } = info.event.extendedProps;
+//     const isOnline = onlineStatus[studentUsername];
+//     const icons = { pending: "⏳", accepted: "✅", rejected: "❌" };
+//     const colors = { pending: "#ffc107", accepted: "#28a745", rejected: "#dc3545" };
+
+//     return (
+//       <div
+//         style={{
+//           backgroundColor: colors[status] || "#6c757d",
+//           color: "white",
+//           padding: "4px 6px",
+//           borderRadius: "4px",
+//           fontWeight: 500,
+//           fontSize: "0.9rem",
+//           textAlign: "center",
+//           display: "flex",
+//           justifyContent: "space-between",
+//         }}
+//       >
+//         <span>{icons[status] || "❓"} {info.event.title}</span>
+//         <span style={{ fontSize: "0.75rem" }}>{isOnline ? "🟢" : "🔴"}</span>
+//       </div>
+//     );
+//   };
+
+//   // Smooth popup handlers
+//   const onEventMouseMove = (info) => {
+//     if (!popupLocked) {
+//       setHoveredEvent(info.event);
+//       let x = info.jsEvent.pageX + 15;
+//       let y = info.jsEvent.pageY + 15;
+
+//       // Prevent popup from going off screen
+//       const popupWidth = 250;
+//       const popupHeight = 180;
+//       const pageWidth = window.innerWidth;
+//       const pageHeight = window.innerHeight;
+//       if (x + popupWidth > pageWidth) x = pageWidth - popupWidth - 10;
+//       if (y + popupHeight > pageHeight) y = pageHeight - popupHeight - 10;
+
+//       setPopupPos({ x, y });
+//       if (hideTimer.current) clearTimeout(hideTimer.current);
+//     }
+//   };
+//   const onEventLeave = () => {
+//     if (!popupLocked) hideTimer.current = setTimeout(() => setHoveredEvent(null), 300);
+//   };
+//   const onPopupEnter = () => { if (hideTimer.current) clearTimeout(hideTimer.current); };
+//   const onPopupLeave = () => { if (!popupLocked) hideTimer.current = setTimeout(() => setHoveredEvent(null), 300); };
+//   const onEventClick = (info) => {
+//     setHoveredEvent(info.event);
+//     setPopupLocked(true);
+//     setPopupPos({ x: info.jsEvent.pageX + 15, y: info.jsEvent.pageY + 15 });
+//     setSelectedEventId(info.event.id);
+//   };
+
+//   // Auto-clear alerts
+//   useEffect(() => {
+//     if (error || success) {
+//       const timer = setTimeout(() => { setError(""); setSuccess(""); }, 5000);
+//       return () => clearTimeout(timer);
+//     }
+//   }, [error, success]);
+
+//   if (loading) return <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "100vh" }}><Spinner animation="border" /></div>;
+
+//   return (
+//     <Container fluid style={{ backgroundColor: "#f7f9fc", minHeight: "100vh", padding: "30px" }}>
+//       <Card className="shadow-sm" style={{ borderRadius: "10px", border: "none" }}>
+//         <Card.Body>
+//           <h3 className="mb-4 text-white p-3 rounded" style={{ background: "linear-gradient(90deg, #007bff, #6610f2)", textAlign: "center" }}>📅 Teacher's Session Calendar</h3>
+//           {error && <Alert variant="danger">{error}</Alert>}
+//           {success && <Alert variant="success">{success}</Alert>}
+//           <Alert variant="info"><strong>Status:</strong> 🟢 Student online | 🔴 Student offline</Alert>
+//           <FullCalendar
+//             plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+//             initialView="dayGridMonth"
+//             events={events}
+//             eventContent={eventContent}
+//             eventMouseEnter={onEventMouseMove}
+//             eventMouseLeave={onEventLeave}
+//             eventClick={onEventClick}
+//             eventMouseMove={onEventMouseMove}
+//             height="80vh"
+//           />
+//           {hoveredEvent && (
+//             <div
+//               style={{
+//                 position: "absolute",
+//                 top: popupPos.y,
+//                 left: popupPos.x,
+//                 zIndex: 9999,
+//                 backgroundColor: "#fff",
+//                 padding: "12px",
+//                 borderRadius: "8px",
+//                 boxShadow: "0 2px 12px rgba(0,0,0,0.25)",
+//                 width: 250,
+//               }}
+//               onMouseEnter={onPopupEnter}
+//               onMouseLeave={onPopupLeave}
+//             >
+//               <h6>{hoveredEvent.title}</h6>
+//               <p>Status: {hoveredEvent.extendedProps.status}</p>
+//               <p>Message: {hoveredEvent.extendedProps.teacherMessage || "No message"}</p>
+//               <div className="d-flex justify-content-between">
+//                 <Button size="sm" variant="success" onClick={() => handleStartCall(hoveredEvent.id, hoveredEvent.title)}>🎥 Call</Button>
+//                 {hoveredEvent.extendedProps.status === "pending" && (
+//                   <>
+//                     <Button size="sm" variant="primary" onClick={() => setShowAcceptModal(true)}>Accept</Button>
+//                     <Button size="sm" variant="danger" onClick={() => handleReject(hoveredEvent.id)}>Reject</Button>
+//                   </>
+//                 )}
+//               </div>
+//             </div>
+//           )}
+//         </Card.Body>
+//       </Card>
+
+//       {/* Accept Modal */}
+//       <Modal show={showAcceptModal} onHide={() => setShowAcceptModal(false)} centered>
+//         <Modal.Header closeButton>
+//           <Modal.Title>Accept Booking</Modal.Title>
+//         </Modal.Header>
+//         <Modal.Body>
+//           <Form>
+//             <Form.Group>
+//               <Form.Label>Message for student (optional)</Form.Label>
+//               <Form.Control
+//                 type="text"
+//                 placeholder="Enter a message"
+//                 value={message}
+//                 onChange={(e) => setMessage(e.target.value)}
+//               />
+//             </Form.Group>
+//           </Form>
+//         </Modal.Body>
+//         <Modal.Footer>
+//           <Button variant="secondary" onClick={() => setShowAcceptModal(false)}>Cancel</Button>
+//           <Button variant="success" onClick={handleAccept}>Accept</Button>
+//         </Modal.Footer>
+//       </Modal>
+//     </Container>
+//   );
+// };
+
+// export default TeacherCalendar;
+
+
+
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import axios from "axios";
 import FullCalendar from "@fullcalendar/react";
@@ -5116,7 +5754,6 @@ const TeacherCalendar = () => {
             studentUsername: b.studentUsername,
             teacherMessage: b.message || null,
             roomId: b.roomId || null,
-            studentSocketId: b.studentSocketId || null,
           }))
         );
       }
@@ -5140,9 +5777,7 @@ const TeacherCalendar = () => {
       setOnlineStatus((prev) => ({ ...prev, [data.username]: true }));
       setEvents((prev) =>
         prev.map((event) =>
-          event.studentUsername === data.username
-            ? { ...event, studentSocketId: data.socketId }
-            : event
+          event.studentUsername === data.username ? { ...event, studentSocketId: data.socketId } : event
         )
       );
     };
@@ -5190,14 +5825,10 @@ const TeacherCalendar = () => {
 
       setEvents((prev) => prev.map((e) => (e.id === bookingId ? { ...e, roomId } : e)));
 
-      if (onlineStatus[studentUsername] && socket.connected) {
-        socket.emit("incoming-call", { roomId, tutorUsername, bookingId });
-      }
-
       navigate(
         `/video-call?bookingId=${bookingId}&studentUsername=${studentUsername}&type=teacher&name=${encodeURIComponent(
           tutorUsername
-        )}`
+        )}&roomId=${roomId}`
       );
     } catch (err) {
       console.error("Start call error:", err);
@@ -5215,7 +5846,9 @@ const TeacherCalendar = () => {
       );
 
       setEvents((prev) =>
-        prev.map((e) => (e.id === selectedEventId ? { ...e, status: "accepted", teacherMessage: message } : e))
+        prev.map((e) =>
+          e.id === selectedEventId ? { ...e, status: "accepted", teacherMessage: message } : e
+        )
       );
 
       setSuccess("Booking accepted!");
@@ -5278,13 +5911,22 @@ const TeacherCalendar = () => {
     );
   };
 
-  // Hover/click popup
-  const onEventEnter = (info) => {
-    if (hoveredEvent?.id !== info.event.id) setPopupLocked(false);
+  // Popup handlers
+  const onEventMouseMove = (info) => {
     if (!popupLocked) {
-      if (hideTimer.current) clearTimeout(hideTimer.current);
       setHoveredEvent(info.event);
-      setPopupPos({ x: info.jsEvent.pageX, y: info.jsEvent.pageY });
+      let x = info.jsEvent.pageX + 15;
+      let y = info.jsEvent.pageY + 15;
+
+      const popupWidth = 250;
+      const popupHeight = 180;
+      const pageWidth = window.innerWidth;
+      const pageHeight = window.innerHeight;
+      if (x + popupWidth > pageWidth) x = pageWidth - popupWidth - 10;
+      if (y + popupHeight > pageHeight) y = pageHeight - popupHeight - 10;
+
+      setPopupPos({ x, y });
+      if (hideTimer.current) clearTimeout(hideTimer.current);
     }
   };
   const onEventLeave = () => { if (!popupLocked) hideTimer.current = setTimeout(() => setHoveredEvent(null), 300); };
@@ -5292,9 +5934,9 @@ const TeacherCalendar = () => {
   const onPopupLeave = () => { if (!popupLocked) hideTimer.current = setTimeout(() => setHoveredEvent(null), 300); };
   const onEventClick = (info) => {
     setHoveredEvent(info.event);
-    setPopupPos({ x: info.jsEvent.pageX, y: info.jsEvent.pageY });
-    setSelectedEventId(info.event.id);
     setPopupLocked(true);
+    setPopupPos({ x: info.jsEvent.pageX + 15, y: info.jsEvent.pageY + 15 });
+    setSelectedEventId(info.event.id);
   };
 
   // Auto-clear alerts
@@ -5320,47 +5962,66 @@ const TeacherCalendar = () => {
             initialView="dayGridMonth"
             events={events}
             eventContent={eventContent}
-            eventMouseEnter={onEventEnter}
+            eventMouseEnter={onEventMouseMove}
             eventMouseLeave={onEventLeave}
             eventClick={onEventClick}
+            eventMouseMove={onEventMouseMove}
             height="80vh"
           />
+          {hoveredEvent && (
+            <div
+              style={{
+                position: "absolute",
+                top: popupPos.y,
+                left: popupPos.x,
+                zIndex: 9999,
+                backgroundColor: "#fff",
+                padding: "12px",
+                borderRadius: "8px",
+                boxShadow: "0 2px 12px rgba(0,0,0,0.25)",
+                width: 250,
+              }}
+              onMouseEnter={onPopupEnter}
+              onMouseLeave={onPopupLeave}
+            >
+              <h6>{hoveredEvent.title}</h6>
+              <p>Status: {hoveredEvent.extendedProps.status}</p>
+              <p>Message: {hoveredEvent.extendedProps.teacherMessage || "No message"}</p>
+              <div className="d-flex justify-content-between">
+                <Button size="sm" variant="success" onClick={() => handleStartCall(hoveredEvent.id, hoveredEvent.title)}>🎥 Call</Button>
+                {hoveredEvent.extendedProps.status === "pending" && (
+                  <>
+                    <Button size="sm" variant="primary" onClick={() => setShowAcceptModal(true)}>Accept</Button>
+                    <Button size="sm" variant="danger" onClick={() => handleReject(hoveredEvent.id)}>Reject</Button>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
         </Card.Body>
       </Card>
 
-      {/* Popup */}
-      {hoveredEvent && (
-        <div style={{ position: "absolute", top: popupPos.y + 15, left: popupPos.x + 15, backgroundColor: "white", padding: "20px", border: "2px solid #0af7ff", borderRadius: "8px", zIndex: 1000 }} onMouseEnter={onPopupEnter} onMouseLeave={onPopupLeave}>
-          <h5>{hoveredEvent.extendedProps.studentUsername}</h5>
-          <p><strong>Time:</strong> {new Date(hoveredEvent.start).toLocaleString()} - {new Date(hoveredEvent.end).toLocaleString()}</p>
-          <p><strong>Status:</strong> {hoveredEvent.extendedProps.status} {onlineStatus[hoveredEvent.extendedProps.studentUsername] ? "🟢" : "🔴"}</p>
-
-          {hoveredEvent.extendedProps.status === "pending" && (
-            <>
-              <Button size="sm" variant="success" className="me-2 mt-2" onClick={() => setShowAcceptModal(true)}>Accept</Button>
-              <Button size="sm" variant="danger" className="mt-2" onClick={() => handleReject(hoveredEvent.id)}>Reject</Button>
-            </>
-          )}
-
-          {hoveredEvent.extendedProps.status === "accepted" && (
-            <>
-              {hoveredEvent.extendedProps.teacherMessage && <p><strong>Details:</strong> {hoveredEvent.extendedProps.teacherMessage}</p>}
-              <Button size="sm" variant="primary" className="mt-2" onClick={() => handleStartCall(hoveredEvent.id, hoveredEvent.extendedProps.studentUsername)}>Start Call</Button>
-            </>
-          )}
-        </div>
-      )}
-
       {/* Accept Modal */}
-      <Modal show={showAcceptModal} onHide={() => setShowAcceptModal(false)}>
-        <Modal.Header closeButton><Modal.Title>Confirm Booking</Modal.Title></Modal.Header>
+      <Modal show={showAcceptModal} onHide={() => setShowAcceptModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Accept Booking</Modal.Title>
+        </Modal.Header>
         <Modal.Body>
-          <Form.Control type="text" placeholder="Enter meeting link or details" value={message} onChange={(e) => setMessage(e.target.value)} />
-          <Form.Text>Shared with student upon acceptance.</Form.Text>
+          <Form>
+            <Form.Group>
+              <Form.Label>Message for student (optional)</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="Enter a message"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+              />
+            </Form.Group>
+          </Form>
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowAcceptModal(false)}>Cancel</Button>
-          <Button variant="success" onClick={handleAccept}>Confirm</Button>
+          <Button variant="success" onClick={handleAccept}>Accept</Button>
         </Modal.Footer>
       </Modal>
     </Container>

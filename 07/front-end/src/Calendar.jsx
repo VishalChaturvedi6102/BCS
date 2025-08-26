@@ -4832,6 +4832,1088 @@
 
 
 
+// import React, { useEffect, useState, useCallback } from "react";
+// import FullCalendar from "@fullcalendar/react";
+// import dayGridPlugin from "@fullcalendar/daygrid";
+// import timeGridPlugin from "@fullcalendar/timegrid";
+// import interactionPlugin from "@fullcalendar/interaction";
+// import axios from "axios";
+// import { useNavigate } from "react-router-dom";
+// import { socket } from "./socket";
+// import { Modal, Button, Alert, Spinner, Card, Container } from "react-bootstrap";
+
+// const Calendar = () => {
+//   const [events, setEvents] = useState([]);
+//   const [selectedSlot, setSelectedSlot] = useState(null);
+//   const [showPopup, setShowPopup] = useState(false);
+//   const [customStart, setCustomStart] = useState("");
+//   const [customEnd, setCustomEnd] = useState("");
+//   const [loading, setLoading] = useState(true);
+//   const [showIncomingCall, setShowIncomingCall] = useState(false);
+//   const [callData, setCallData] = useState(null);
+//   const [onlineStatus, setOnlineStatus] = useState({});
+//   const [error, setError] = useState("");
+//   const [success, setSuccess] = useState("");
+
+//   const studentUsername = sessionStorage.getItem("studentUsername");
+//   const token = sessionStorage.getItem("token");
+//   const navigate = useNavigate();
+
+//   // Fetch student's bookings
+//   const fetchBookings = useCallback(() => {
+//     setLoading(true);
+//     setError("");
+//     axios
+//       .get(`http://localhost:4000/student/bookings?username=${studentUsername}`, {
+//         headers: { Authorization: `Bearer ${token}` },
+//         timeout: 10000,
+//       })
+//       .then((res) => {
+//         const bookings = res.data || [];
+//         setEvents(bookings);
+//         const statusUpdate = {};
+//         bookings.forEach((b) => { statusUpdate[b.tutorUsername] = false; });
+//         setOnlineStatus(statusUpdate);
+//       })
+//       .catch((err) => {
+//         console.error("Error fetching bookings:", err);
+//         setError("Failed to load bookings. Please try again.");
+//       })
+//       .finally(() => setLoading(false));
+//   }, [studentUsername, token]);
+
+//   // Socket listeners
+//   useEffect(() => {
+//     fetchBookings();
+
+//     const incomingCallHandler = (data) => {
+//       setCallData(data);
+//       setShowIncomingCall(true);
+//     };
+
+//     const bookingUpdateHandler = (data) => {
+//       fetchBookings();
+//       if (data.status === "accepted") setSuccess(`Your booking has been accepted! ${data.message || ""}`);
+//       else if (data.status === "rejected") setError("Your booking request has been rejected.");
+//     };
+
+//     const teacherOnlineHandler = (data) => setOnlineStatus((prev) => ({ ...prev, [data.username]: true }));
+
+//     socket.on("incoming-call", incomingCallHandler);
+//     socket.on("booking-update", bookingUpdateHandler);
+//     socket.on("teacher-online", teacherOnlineHandler);
+
+//     if (socket.connected) socket.emit("student-online", studentUsername);
+//     else socket.once("connect", () => socket.emit("student-online", studentUsername));
+
+//     return () => {
+//       socket.off("incoming-call", incomingCallHandler);
+//       socket.off("booking-update", bookingUpdateHandler);
+//       socket.off("teacher-online", teacherOnlineHandler);
+//     };
+//   }, [studentUsername, fetchBookings]);
+
+//   // Date selection
+//   const handleDateSelect = (selectInfo) => {
+//     const today = new Date();
+//     today.setHours(0, 0, 0, 0);
+//     const selectedDate = new Date(selectInfo.startStr);
+//     if (selectedDate < today) return alert("You cannot book a session in the past!");
+
+//     setSelectedSlot({
+//       date: selectInfo.startStr.split("T")[0],
+//       start: selectInfo.startStr,
+//       end: selectInfo.endStr,
+//     });
+//     setCustomStart(selectInfo.startStr.substring(11, 16));
+//     setCustomEnd(selectInfo.endStr.substring(11, 16));
+//     setShowPopup(true);
+//   };
+
+//   // Confirm booking
+//   const confirmBooking = async () => {
+//     if (!customStart || !customEnd) return alert("Please select both start and end times.");
+//     if (customEnd <= customStart) return alert("End time must be later than start time.");
+
+//     const startDateTime = `${selectedSlot.date}T${customStart}:00`;
+//     const endDateTime = `${selectedSlot.date}T${customEnd}:00`;
+//     const tutorUsername = sessionStorage.getItem("tutorUsername");
+
+//     try {
+//       setError("");
+//       await axios.post("http://localhost:4000/bookings", {
+//         tutorUsername, studentUsername, start: startDateTime, end: endDateTime, status: "pending",
+//       }, { headers: { Authorization: `Bearer ${token}` }, timeout: 5000 });
+//       setSuccess("Booking request sent!");
+//       fetchBookings();
+//     } catch (err) {
+//       console.error(err);
+//       if (err.response?.status === 409) setError("This time slot is already booked. Please choose another.");
+//       else setError("Error creating booking. Please try again.");
+//     } finally {
+//       setShowPopup(false);
+//       setSelectedSlot(null);
+//     }
+//   };
+
+//   // Incoming call response
+//   const handleIncomingCallResponse = (accept) => {
+//     setShowIncomingCall(false);
+//     if (accept && callData) {
+//       // navigate(`/video-call?roomId=${callData.roomId}&type=student&name=${encodeURIComponent(studentUsername)}`);
+//       navigate(`/video-call?bookingId=${booking.id}&roomId=${booking.roomId}&type=student&name=${encodeURIComponent(studentUsername)}`);
+
+//     }
+//   };
+
+//   // Join existing call
+//   const joinCall = async (bookingId) => {
+//     try {
+//       setError("");
+//       const res = await axios.get(`http://localhost:4000/get-call/${bookingId}`, {
+//         headers: { Authorization: `Bearer ${token}` }, timeout: 5000,
+//       });
+//       if (res.data.roomId) navigate(`/video-call?roomId=${res.data.roomId}&type=student&name=${encodeURIComponent(studentUsername)}`);
+//       else setError("No active call for this booking. Wait for the teacher.");
+//     } catch (err) {
+//       console.error(err);
+//       setError("Could not join call. Please try again.");
+//     }
+//   };
+
+//   // Event display logic
+//   const getEventDisplay = (booking) => {
+//     const onlineIndicator = onlineStatus[booking.tutorUsername] ? " 🟢" : " 🔴";
+//     switch (booking.status) {
+//       case "accepted": return { title: `✅ ${booking.tutorUsername}${onlineIndicator}`, backgroundColor: "#28a745" };
+//       case "rejected": return { title: `❌ ${booking.tutorUsername}`, backgroundColor: "#dc3545" };
+//       default: return { title: `⏳ ${booking.tutorUsername}${onlineIndicator}`, backgroundColor: "#ffc107" };
+//     }
+//   };
+
+//   // Event click
+//   const handleEventClick = (info) => {
+//     const booking = info.event.extendedProps;
+//     if (booking.status === "accepted") {
+//       if (booking.roomId) navigate(`/video-call?roomId=${booking.roomId}&type=student&name=${encodeURIComponent(studentUsername)}`);
+//       else setError("Waiting for teacher to start the call.");
+//     } else if (booking.status === "pending") setError("Your booking request is still pending approval.");
+//     else setError("This booking was rejected. Please create a new one.");
+//   };
+
+//   // Event content
+//   const eventContent = (eventInfo) => {
+//     const display = getEventDisplay(eventInfo.event.extendedProps);
+//     return (
+//       <div style={{ backgroundColor: display.backgroundColor, color: "white", padding: "4px 6px", borderRadius: "4px", width: "100%", fontWeight: 500, fontSize: "0.9rem", textAlign: "center" }}>
+//         {display.title}
+//       </div>
+//     );
+//   };
+
+//   // Auto-clear messages
+//   useEffect(() => {
+//     if (error || success) {
+//       const timer = setTimeout(() => { setError(""); setSuccess(""); }, 5000);
+//       return () => clearTimeout(timer);
+//     }
+//   }, [error, success]);
+
+//   return (
+//     <Container fluid style={{ backgroundColor: "#f7f9fc", minHeight: "100vh", padding: "30px" }}>
+//       <Card className="shadow-sm" style={{ borderRadius: "10px", border: "none" }}>
+//         <Card.Body>
+//           <h3 className="mb-4 text-white p-3 rounded" style={{ background: "linear-gradient(90deg, #007bff, #6610f2)", textAlign: "center" }}>
+//             📅 Student's Session Calendar
+//           </h3>
+//           {error && <Alert variant="danger">{error}</Alert>}
+//           {success && <Alert variant="success">{success}</Alert>}
+//           <Alert variant="info" className="mb-3"><strong>Status Indicators:</strong> 🟢 Tutor online | 🔴 Tutor offline</Alert>
+
+//           {loading ? (
+//             <div className="text-center p-5">
+//               <Spinner animation="border" role="status" className="text-primary" />
+//               <p className="mt-3">Loading calendar...</p>
+//             </div>
+//           ) : (
+//             <FullCalendar
+//               plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+//               initialView="dayGridMonth"
+//               selectable
+//               select={handleDateSelect}
+//               validRange={{ start: new Date().toISOString().split("T")[0] }}
+//               events={events.map(b => ({ id: b.id, start: b.start, end: b.end, extendedProps: b }))}
+//               eventContent={eventContent}
+//               eventClick={handleEventClick}
+//               height="80vh"
+//             />
+//           )}
+//         </Card.Body>
+//       </Card>
+
+//       {/* Booking modal */}
+//       {showPopup && (
+//         <div className="d-flex justify-content-center align-items-center" style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", backgroundColor: "rgba(0,0,0,0.5)", zIndex: 9999 }} onClick={() => setShowPopup(false)}>
+//           <div className="p-4 rounded shadow-lg" style={{ background: "white", width: "400px", animation: "fadeIn 0.3s ease-in-out" }} onClick={e => e.stopPropagation()}>
+//             <h4 className="mb-3 text-primary">Confirm Your Booking</h4>
+//             <p><strong>Date:</strong> {selectedSlot?.date}</p>
+//             <div className="mb-3">
+//               <label className="form-label fw-bold">
+
+//               Start Time
+//               </label>
+//               <input
+//                 type="time"
+//                 className="form-control"
+//                 value={customStart}
+//                 onChange={(e) => setCustomStart(e.target.value)}
+//               />
+//             </div>
+//             <div className="mb-3">
+//               <label className="form-label fw-bold">
+//                 End Time
+//               </label>
+//               <input
+//                 type="time"
+//                 className="form-control"
+//                 value={customEnd}
+//                 onChange={(e) => setCustomEnd(e.target.value)}
+//               />
+//             </div>
+//             <div className="d-flex justify-content-between mt-4">
+//               <button
+//                 className="btn btn-outline-secondary px-4"
+//                 onClick={() => setShowPopup(false)}
+//               >
+//                 Cancel
+//               </button>
+//               <button
+//                 className="btn btn-primary px-4"
+//                 onClick={confirmBooking}
+//               >
+//                 Send Request
+//               </button>
+//             </div>
+//           </div>
+//         </div>
+//       )}
+
+//       {/* Incoming call modal */}
+//       <Modal
+//         show={showIncomingCall}
+//         onHide={() => handleIncomingCallResponse(false)}
+//         centered
+//       >
+//         <Modal.Header closeButton>
+//           <Modal.Title>Incoming Video Call</Modal.Title>
+//         </Modal.Header>
+//         <Modal.Body>
+//           <p>
+//             <strong>{callData?.tutorUsername}</strong> is starting a video call
+//             for your session.
+//           </p>
+//           <p>Would you like to join now?</p>
+//         </Modal.Body>
+//         <Modal.Footer>
+//           <Button
+//             variant="secondary"
+//             onClick={() => handleIncomingCallResponse(false)}
+//           >
+//             Decline
+//           </Button>
+//           <Button
+//             variant="primary"
+//             onClick={() => handleIncomingCallResponse(true)}
+//           >
+//             Accept Call
+//           </Button>
+//         </Modal.Footer>
+//       </Modal>
+
+//       <style>
+//         {`
+//           @keyframes fadeIn {
+//             from { opacity: 0; transform: scale(0.9); }
+//             to { opacity: 1; transform: scale(1); }
+//           }
+//         `}
+//       </style>
+//     </Container>
+//   );
+// };
+
+// export default Calendar;
+
+
+
+
+
+// import React, { useEffect, useState, useCallback } from "react";
+// import FullCalendar from "@fullcalendar/react";
+// import dayGridPlugin from "@fullcalendar/daygrid";
+// import timeGridPlugin from "@fullcalendar/timegrid";
+// import interactionPlugin from "@fullcalendar/interaction";
+// import axios from "axios";
+// import { useNavigate } from "react-router-dom";
+// import { socket } from "./socket";
+// import { Modal, Button, Alert, Spinner, Card, Container } from "react-bootstrap";
+
+// const Calendar = () => {
+//   const [events, setEvents] = useState([]);
+//   const [selectedSlot, setSelectedSlot] = useState(null);
+//   const [showPopup, setShowPopup] = useState(false);
+//   const [customStart, setCustomStart] = useState("");
+//   const [customEnd, setCustomEnd] = useState("");
+//   const [loading, setLoading] = useState(true);
+//   const [showIncomingCall, setShowIncomingCall] = useState(false);
+//   const [callData, setCallData] = useState(null);
+//   const [onlineStatus, setOnlineStatus] = useState({});
+//   const [error, setError] = useState("");
+//   const [success, setSuccess] = useState("");
+
+//   const studentUsername = sessionStorage.getItem("studentUsername");
+//   const token = sessionStorage.getItem("token");
+//   const navigate = useNavigate();
+
+//   // Fetch student's bookings
+//   const fetchBookings = useCallback(() => {
+//     setLoading(true);
+//     setError("");
+//     axios
+//       .get(`http://localhost:4000/student/bookings?username=${studentUsername}`, {
+//         headers: { Authorization: `Bearer ${token}` },
+//         timeout: 10000,
+//       })
+//       .then((res) => {
+//         const bookings = res.data || [];
+//         setEvents(bookings);
+//         const statusUpdate = {};
+//         bookings.forEach((b) => { statusUpdate[b.tutorUsername] = false; });
+//         setOnlineStatus(statusUpdate);
+//       })
+//       .catch((err) => {
+//         console.error("Error fetching bookings:", err);
+//         setError("Failed to load bookings. Please try again.");
+//       })
+//       .finally(() => setLoading(false));
+//   }, [studentUsername, token]);
+
+//   // Socket listeners
+//   useEffect(() => {
+//     fetchBookings();
+
+//     const incomingCallHandler = (data) => {
+//       setCallData(data);
+//       setShowIncomingCall(true);
+//     };
+
+//     const bookingUpdateHandler = (data) => {
+//       fetchBookings();
+//       if (data.status === "accepted") setSuccess(`Your booking has been accepted! ${data.message || ""}`);
+//       else if (data.status === "rejected") setError("Your booking request has been rejected.");
+//     };
+
+//     const teacherOnlineHandler = (data) => setOnlineStatus((prev) => ({ ...prev, [data.username]: true }));
+
+//     socket.on("incoming-call", incomingCallHandler);
+//     socket.on("booking-update", bookingUpdateHandler);
+//     socket.on("teacher-online", teacherOnlineHandler);
+
+//     if (socket.connected) socket.emit("student-online", studentUsername);
+//     else socket.once("connect", () => socket.emit("student-online", studentUsername));
+
+//     return () => {
+//       socket.off("incoming-call", incomingCallHandler);
+//       socket.off("booking-update", bookingUpdateHandler);
+//       socket.off("teacher-online", teacherOnlineHandler);
+//     };
+//   }, [studentUsername, fetchBookings]);
+
+//   // Date selection
+//   const handleDateSelect = (selectInfo) => {
+//     const today = new Date();
+//     today.setHours(0, 0, 0, 0);
+//     const selectedDate = new Date(selectInfo.startStr);
+//     if (selectedDate < today) return alert("You cannot book a session in the past!");
+
+//     setSelectedSlot({
+//       date: selectInfo.startStr.split("T")[0],
+//       start: selectInfo.startStr,
+//       end: selectInfo.endStr,
+//     });
+//     setCustomStart(selectInfo.startStr.substring(11, 16));
+//     setCustomEnd(selectInfo.endStr.substring(11, 16));
+//     setShowPopup(true);
+//   };
+
+//   // Confirm booking
+//   const confirmBooking = async () => {
+//     if (!customStart || !customEnd) return alert("Please select both start and end times.");
+//     if (customEnd <= customStart) return alert("End time must be later than start time.");
+
+//     const startDateTime = `${selectedSlot.date}T${customStart}:00`;
+//     const endDateTime = `${selectedSlot.date}T${customEnd}:00`;
+//     const tutorUsername = sessionStorage.getItem("tutorUsername");
+
+//     try {
+//       setError("");
+//       await axios.post("http://localhost:4000/bookings", {
+//         tutorUsername, studentUsername, start: startDateTime, end: endDateTime, status: "pending",
+//       }, { headers: { Authorization: `Bearer ${token}` }, timeout: 5000 });
+//       setSuccess("Booking request sent!");
+//       fetchBookings();
+//     } catch (err) {
+//       console.error(err);
+//       if (err.response?.status === 409) setError("This time slot is already booked. Please choose another.");
+//       else setError("Error creating booking. Please try again.");
+//     } finally {
+//       setShowPopup(false);
+//       setSelectedSlot(null);
+//     }
+//   };
+
+//   // Incoming call response
+//   const handleIncomingCallResponse = (accept) => {
+//     setShowIncomingCall(false);
+//     if (accept && callData) {
+//       navigate(`/video-call?bookingId=${callData.bookingId}&roomId=${callData.roomId}&type=student&name=${encodeURIComponent(studentUsername)}`);
+//     }
+//   };
+
+//   // Event display logic
+//   const getEventDisplay = (booking) => {
+//     const onlineIndicator = onlineStatus[booking.tutorUsername] ? " 🟢" : " 🔴";
+//     switch (booking.status) {
+//       case "accepted": return { title: `✅ ${booking.tutorUsername}${onlineIndicator}`, backgroundColor: "#28a745" };
+//       case "rejected": return { title: `❌ ${booking.tutorUsername}`, backgroundColor: "#dc3545" };
+//       default: return { title: `⏳ ${booking.tutorUsername}${onlineIndicator}`, backgroundColor: "#ffc107" };
+//     }
+//   };
+
+//   // Event click
+//   const handleEventClick = (info) => {
+//     const booking = info.event.extendedProps;
+//     if (booking.status === "accepted") {
+//       if (booking.roomId) navigate(`/video-call?roomId=${booking.roomId}&type=student&name=${encodeURIComponent(studentUsername)}`);
+//       else setError("Waiting for teacher to start the call.");
+//     } else if (booking.status === "pending") setError("Your booking request is still pending approval.");
+//     else setError("This booking was rejected. Please create a new one.");
+//   };
+
+//   // Event content
+//   const eventContent = (eventInfo) => {
+//     const display = getEventDisplay(eventInfo.event.extendedProps);
+//     return (
+//       <div style={{ backgroundColor: display.backgroundColor, color: "white", padding: "4px 6px", borderRadius: "4px", width: "100%", fontWeight: 500, fontSize: "0.9rem", textAlign: "center" }}>
+//         {display.title}
+//       </div>
+//     );
+//   };
+
+//   // Auto-clear messages
+//   useEffect(() => {
+//     if (error || success) {
+//       const timer = setTimeout(() => { setError(""); setSuccess(""); }, 5000);
+//       return () => clearTimeout(timer);
+//     }
+//   }, [error, success]);
+
+//   return (
+//     <Container fluid style={{ backgroundColor: "#f7f9fc", minHeight: "100vh", padding: "30px" }}>
+//       <Card className="shadow-sm" style={{ borderRadius: "10px", border: "none" }}>
+//         <Card.Body>
+//           <h3 className="mb-4 text-white p-3 rounded" style={{ background: "linear-gradient(90deg, #007bff, #6610f2)", textAlign: "center" }}>
+//             📅 Student's Session Calendar
+//           </h3>
+//           {error && <Alert variant="danger">{error}</Alert>}
+//           {success && <Alert variant="success">{success}</Alert>}
+//           <Alert variant="info" className="mb-3"><strong>Status Indicators:</strong> 🟢 Tutor online | 🔴 Tutor offline</Alert>
+
+//           {loading ? (
+//             <div className="text-center p-5">
+//               <Spinner animation="border" role="status" className="text-primary" />
+//               <p className="mt-3">Loading calendar...</p>
+//             </div>
+//           ) : (
+//             <FullCalendar
+//               plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+//               initialView="dayGridMonth"
+//               selectable
+//               select={handleDateSelect}
+//               validRange={{ start: new Date().toISOString().split("T")[0] }}
+//               events={events.map(b => ({ id: b.id, start: b.start, end: b.end, extendedProps: b }))}
+//               eventContent={eventContent}
+//               eventClick={handleEventClick}
+//               height="80vh"
+//             />
+//           )}
+//         </Card.Body>
+//       </Card>
+
+//       {/* Booking modal */}
+//       {showPopup && (
+//         <div className="d-flex justify-content-center align-items-center" style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", backgroundColor: "rgba(0,0,0,0.5)", zIndex: 9999 }} onClick={() => setShowPopup(false)}>
+//           <div className="p-4 rounded shadow-lg" style={{ background: "white", width: "400px", animation: "fadeIn 0.3s ease-in-out" }} onClick={e => e.stopPropagation()}>
+//             <h4 className="mb-3 text-primary">Confirm Your Booking</h4>
+//             <p><strong>Date:</strong> {selectedSlot?.date}</p>
+//             <div className="mb-3">
+//               <label className="form-label fw-bold">Start Time</label>
+//               <input type="time" className="form-control" value={customStart} onChange={(e) => setCustomStart(e.target.value)} />
+//             </div>
+//             <div className="mb-3">
+//               <label className="form-label fw-bold">End Time</label>
+//               <input type="time" className="form-control" value={customEnd} onChange={(e) => setCustomEnd(e.target.value)} />
+//             </div>
+//             <div className="d-flex justify-content-between mt-4">
+//               <button className="btn btn-outline-secondary px-4" onClick={() => setShowPopup(false)}>Cancel</button>
+//               <button className="btn btn-primary px-4" onClick={confirmBooking}>Send Request</button>
+//             </div>
+//           </div>
+//         </div>
+//       )}
+
+//       {/* Incoming call modal */}
+//       <Modal show={showIncomingCall} onHide={() => handleIncomingCallResponse(false)} centered>
+//         <Modal.Header closeButton>
+//           <Modal.Title>Incoming Video Call</Modal.Title>
+//         </Modal.Header>
+//         <Modal.Body>
+//           <p><strong>{callData?.tutorUsername}</strong> is starting a video call for your session.</p>
+//           <p>Would you like to join now?</p>
+//         </Modal.Body>
+//         <Modal.Footer>
+//           <Button variant="secondary" onClick={() => handleIncomingCallResponse(false)}>Decline</Button>
+//           <Button variant="primary" onClick={() => handleIncomingCallResponse(true)}>Accept Call</Button>
+//         </Modal.Footer>
+//       </Modal>
+
+//       <style>
+//         {`@keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }`}
+//       </style>
+//     </Container>
+//   );
+// };
+
+// export default Calendar;
+
+
+
+
+// import React, { useEffect, useState, useCallback } from "react";
+// import FullCalendar from "@fullcalendar/react";
+// import dayGridPlugin from "@fullcalendar/daygrid";
+// import timeGridPlugin from "@fullcalendar/timegrid";
+// import interactionPlugin from "@fullcalendar/interaction";
+// import axios from "axios";
+// import { useNavigate } from "react-router-dom";
+// import { socket } from "./socket";
+// import { Modal, Button, Alert, Spinner, Card, Container } from "react-bootstrap";
+
+// const Calendar = () => {
+//   const [events, setEvents] = useState([]);
+//   const [selectedSlot, setSelectedSlot] = useState(null);
+//   const [showPopup, setShowPopup] = useState(false);
+//   const [customStart, setCustomStart] = useState("");
+//   const [customEnd, setCustomEnd] = useState("");
+//   const [loading, setLoading] = useState(true);
+//   const [showIncomingCall, setShowIncomingCall] = useState(false);
+//   const [callData, setCallData] = useState(null);
+//   const [onlineStatus, setOnlineStatus] = useState({});
+//   const [error, setError] = useState("");
+//   const [success, setSuccess] = useState("");
+
+//   const studentUsername = sessionStorage.getItem("studentUsername");
+//   const token = sessionStorage.getItem("token");
+//   const navigate = useNavigate();
+
+//   // Fetch student's bookings
+//   const fetchBookings = useCallback(() => {
+//     setLoading(true);
+//     setError("");
+//     axios
+//       .get(`http://localhost:4000/student/bookings?username=${studentUsername}`, {
+//         headers: { Authorization: `Bearer ${token}` },
+//         timeout: 10000,
+//       })
+//       .then((res) => {
+//         const bookings = res.data || [];
+//         setEvents(
+//           bookings.map((b) => ({
+//             id: b._id,
+//             start: b.start,
+//             end: b.end,
+//             extendedProps: b, // preserve full booking object
+//           }))
+//         );
+
+//         const statusUpdate = {};
+//         bookings.forEach((b) => { statusUpdate[b.tutorUsername] = false; });
+//         setOnlineStatus(statusUpdate);
+//       })
+//       .catch((err) => {
+//         console.error("Error fetching bookings:", err);
+//         setError("Failed to load bookings. Please try again.");
+//       })
+//       .finally(() => setLoading(false));
+//   }, [studentUsername, token]);
+
+//   // Socket listeners
+//   useEffect(() => {
+//     fetchBookings();
+
+//     const incomingCallHandler = (data) => {
+//       if (!data.bookingId) return; // guarantee bookingId exists
+//       setCallData(data);
+//       setShowIncomingCall(true);
+//     };
+
+//     const bookingUpdateHandler = (data) => {
+//       fetchBookings();
+//       if (data.status === "accepted") setSuccess(`Your booking has been accepted! ${data.message || ""}`);
+//       else if (data.status === "rejected") setError("Your booking request has been rejected.");
+//     };
+
+//     const teacherOnlineHandler = (data) => {
+//       if (!data.username) return; // ensure valid username
+//       setOnlineStatus((prev) => ({ ...prev, [data.username]: true }));
+//     };
+
+//     socket.on("incoming-call", incomingCallHandler);
+//     socket.on("booking-update", bookingUpdateHandler);
+//     socket.on("teacher-online", teacherOnlineHandler);
+
+//     // Emit student-online only if username exists
+//     if (studentUsername) {
+//       if (socket.connected) socket.emit("student-online", { username: studentUsername });
+//       else socket.once("connect", () => socket.emit("student-online", { username: studentUsername }));
+//     }
+
+//     return () => {
+//       socket.off("incoming-call", incomingCallHandler);
+//       socket.off("booking-update", bookingUpdateHandler);
+//       socket.off("teacher-online", teacherOnlineHandler);
+//     };
+//   }, [studentUsername, fetchBookings]);
+
+//   // Date selection
+//   const handleDateSelect = (selectInfo) => {
+//     const today = new Date();
+//     today.setHours(0, 0, 0, 0);
+//     const selectedDate = new Date(selectInfo.startStr);
+//     if (selectedDate < today) return alert("You cannot book a session in the past!");
+
+//     setSelectedSlot({
+//       date: selectInfo.startStr.split("T")[0],
+//       start: selectInfo.startStr,
+//       end: selectInfo.endStr,
+//     });
+//     setCustomStart(selectInfo.startStr.substring(11, 16));
+//     setCustomEnd(selectInfo.endStr.substring(11, 16));
+//     setShowPopup(true);
+//   };
+
+//   // Confirm booking
+//   const confirmBooking = async () => {
+//     if (!customStart || !customEnd) return alert("Please select both start and end times.");
+//     if (customEnd <= customStart) return alert("End time must be later than start time.");
+
+//     const startDateTime = `${selectedSlot.date}T${customStart}:00`;
+//     const endDateTime = `${selectedSlot.date}T${customEnd}:00`;
+//     const tutorUsername = sessionStorage.getItem("tutorUsername");
+
+//     try {
+//       setError("");
+//       await axios.post("http://localhost:4000/bookings", {
+//         tutorUsername,
+//         studentUsername,
+//         start: startDateTime,
+//         end: endDateTime,
+//         status: "pending",
+//       }, { headers: { Authorization: `Bearer ${token}` }, timeout: 5000 });
+
+//       setSuccess("Booking request sent!");
+//       fetchBookings();
+//     } catch (err) {
+//       console.error(err);
+//       if (err.response?.status === 409) setError("This time slot is already booked. Please choose another.");
+//       else setError("Error creating booking. Please try again.");
+//     } finally {
+//       setShowPopup(false);
+//       setSelectedSlot(null);
+//     }
+//   };
+
+//   // Incoming call response
+//   const handleIncomingCallResponse = (accept) => {
+//     setShowIncomingCall(false);
+//     if (accept && callData && callData.bookingId) {
+//       navigate(`/video-call?bookingId=${callData.bookingId}&roomId=${callData.roomId}&type=student&name=${encodeURIComponent(studentUsername)}`);
+//     }
+//   };
+
+//   // Event display logic
+//   const getEventDisplay = (booking) => {
+//     const onlineIndicator = onlineStatus[booking.tutorUsername] ? " 🟢" : " 🔴";
+//     switch (booking.status) {
+//       case "accepted": return { title: `✅ ${booking.tutorUsername}${onlineIndicator}`, backgroundColor: "#28a745" };
+//       case "rejected": return { title: `❌ ${booking.tutorUsername}`, backgroundColor: "#dc3545" };
+//       default: return { title: `⏳ ${booking.tutorUsername}${onlineIndicator}`, backgroundColor: "#ffc107" };
+//     }
+//   };
+
+//   // Event click
+//   const handleEventClick = (info) => {
+//     const booking = info.event.extendedProps;
+//     if (booking.status === "accepted") {
+//       if (booking.roomId) navigate(`/video-call?bookingId=${booking.bookingId || booking.id}&roomId=${booking.roomId}&type=student&name=${encodeURIComponent(studentUsername)}`);
+//       else setError("Waiting for teacher to start the call.");
+//     } else if (booking.status === "pending") setError("Your booking request is still pending approval.");
+//     else setError("This booking was rejected. Please create a new one.");
+//   };
+
+//   // Event content
+//   const eventContent = (eventInfo) => {
+//     const display = getEventDisplay(eventInfo.event.extendedProps);
+//     return (
+//       <div style={{ backgroundColor: display.backgroundColor, color: "white", padding: "4px 6px", borderRadius: "4px", width: "100%", fontWeight: 500, fontSize: "0.9rem", textAlign: "center" }}>
+//         {display.title}
+//       </div>
+//     );
+//   };
+
+//   // Auto-clear messages
+//   useEffect(() => {
+//     if (error || success) {
+//       const timer = setTimeout(() => { setError(""); setSuccess(""); }, 5000);
+//       return () => clearTimeout(timer);
+//     }
+//   }, [error, success]);
+
+//   return (
+//     <Container fluid style={{ backgroundColor: "#f7f9fc", minHeight: "100vh", padding: "30px" }}>
+//       <Card className="shadow-sm" style={{ borderRadius: "10px", border: "none" }}>
+//         <Card.Body>
+//           <h3 className="mb-4 text-white p-3 rounded" style={{ background: "linear-gradient(90deg, #007bff, #6610f2)", textAlign: "center" }}>
+//             📅 Student's Session Calendar
+//           </h3>
+//           {error && <Alert variant="danger">{error}</Alert>}
+//           {success && <Alert variant="success">{success}</Alert>}
+//           <Alert variant="info" className="mb-3"><strong>Status Indicators:</strong> 🟢 Tutor online | 🔴 Tutor offline</Alert>
+
+//           {loading ? (
+//             <div className="text-center p-5">
+//               <Spinner animation="border" role="status" className="text-primary" />
+//               <p className="mt-3">Loading calendar...</p>
+//             </div>
+//           ) : (
+//             <FullCalendar
+//               plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+//               initialView="dayGridMonth"
+//               selectable
+//               select={handleDateSelect}
+//               validRange={{ start: new Date().toISOString().split("T")[0] }}
+//               events={events}
+//               eventContent={eventContent}
+//               eventClick={handleEventClick}
+//               height="80vh"
+//             />
+//           )}
+//         </Card.Body>
+//       </Card>
+
+//       {/* Booking modal */}
+//       {showPopup && (
+//         <div className="d-flex justify-content-center align-items-center" style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", backgroundColor: "rgba(0,0,0,0.5)", zIndex: 9999 }} onClick={() => setShowPopup(false)}>
+//           <div className="p-4 rounded shadow-lg" style={{ background: "white", width: "400px", animation: "fadeIn 0.3s ease-in-out" }} onClick={e => e.stopPropagation()}>
+//             <h4 className="mb-3 text-primary">Confirm Your Booking</h4>
+//             <p><strong>Date:</strong> {selectedSlot?.date}</p>
+//             <div className="mb-3">
+//               <label className="form-label fw-bold">Start Time</label>
+//               <input type="time" className="form-control" value={customStart} onChange={(e) => setCustomStart(e.target.value)} />
+//             </div>
+//             <div className="mb-3">
+//               <label className="form-label fw-bold">End Time</label>
+//               <input type="time" className="form-control" value={customEnd} onChange={(e) => setCustomEnd(e.target.value)} />
+//             </div>
+//             <div className="d-flex justify-content-between mt-4">
+//               <button className="btn btn-outline-secondary px-4" onClick={() => setShowPopup(false)}>Cancel</button>
+//               <button className="btn btn-primary px-4" onClick={confirmBooking}>Send Request</button>
+//             </div>
+//           </div>
+//         </div>
+//       )}
+
+//       {/* Incoming call modal */}
+//       <Modal show={showIncomingCall} onHide={() => handleIncomingCallResponse(false)} centered>
+//         <Modal.Header closeButton>
+//           <Modal.Title>Incoming Video Call</Modal.Title>
+//         </Modal.Header>
+//         <Modal.Body>
+//           <p><strong>{callData?.tutorUsername}</strong> is starting a video call for your session.</p>
+//           <p>Would you like to join now?</p>
+//         </Modal.Body>
+//         <Modal.Footer>
+//           <Button variant="secondary" onClick={() => handleIncomingCallResponse(false)}>Decline</Button>
+//           <Button variant="primary" onClick={() => handleIncomingCallResponse(true)}>Accept Call</Button>
+//         </Modal.Footer>
+//       </Modal>
+
+//       <style>
+//         {`@keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }`}
+//       </style>
+//     </Container>
+//   );
+// };
+
+// export default Calendar;
+
+
+
+
+
+// import React, { useEffect, useState, useCallback } from "react";
+// import FullCalendar from "@fullcalendar/react";
+// import dayGridPlugin from "@fullcalendar/daygrid";
+// import timeGridPlugin from "@fullcalendar/timegrid";
+// import interactionPlugin from "@fullcalendar/interaction";
+// import axios from "axios";
+// import { useNavigate } from "react-router-dom";
+// import { socket } from "./socket";
+// import { Modal, Button, Alert, Spinner, Card, Container } from "react-bootstrap";
+
+// const Calendar = () => {
+//   const [events, setEvents] = useState([]);
+//   const [selectedSlot, setSelectedSlot] = useState(null);
+//   const [showPopup, setShowPopup] = useState(false);
+//   const [customStart, setCustomStart] = useState("");
+//   const [customEnd, setCustomEnd] = useState("");
+//   const [loading, setLoading] = useState(true);
+//   const [showIncomingCall, setShowIncomingCall] = useState(false);
+//   const [callData, setCallData] = useState(null);
+//   const [onlineStatus, setOnlineStatus] = useState({});
+//   const [error, setError] = useState("");
+//   const [success, setSuccess] = useState("");
+
+//   const studentUsername = sessionStorage.getItem("studentUsername");
+//   const token = sessionStorage.getItem("token");
+//   const navigate = useNavigate();
+
+//   const fetchBookings = useCallback(() => {
+//     setLoading(true);
+//     setError("");
+//     axios
+//       .get(`http://localhost:4000/student/bookings?username=${studentUsername}`, {
+//         headers: { Authorization: `Bearer ${token}` },
+//         timeout: 10000,
+//       })
+//       .then((res) => {
+//         const bookings = res.data || [];
+//         setEvents(bookings);
+//         const statusUpdate = {};
+//         bookings.forEach((b) => { statusUpdate[b.tutorUsername] = false; });
+//         setOnlineStatus(statusUpdate);
+//       })
+//       .catch((err) => {
+//         console.error("Error fetching bookings:", err);
+//         setError("Failed to load bookings. Please try again.");
+//       })
+//       .finally(() => setLoading(false));
+//   }, [studentUsername, token]);
+
+//   useEffect(() => {
+//     fetchBookings();
+
+//     const incomingCallHandler = (data) => {
+//       setCallData(data);
+//       setShowIncomingCall(true);
+//     };
+
+//     const bookingUpdateHandler = (data) => {
+//       fetchBookings();
+//       if (data.status === "accepted") setSuccess(`Your booking has been accepted! ${data.message || ""}`);
+//       else if (data.status === "rejected") setError("Your booking request has been rejected.");
+//     };
+
+//     const teacherOnlineHandler = (data) => setOnlineStatus((prev) => ({ ...prev, [data.username]: true }));
+
+//     socket.on("incoming-call", incomingCallHandler);
+//     socket.on("booking-update", bookingUpdateHandler);
+//     socket.on("teacher-online", teacherOnlineHandler);
+
+//     if (socket.connected) socket.emit("student-online", studentUsername);
+//     else socket.once("connect", () => socket.emit("student-online", studentUsername));
+
+//     return () => {
+//       socket.off("incoming-call", incomingCallHandler);
+//       socket.off("booking-update", bookingUpdateHandler);
+//       socket.off("teacher-online", teacherOnlineHandler);
+//     };
+//   }, [studentUsername, fetchBookings]);
+
+//   const handleDateSelect = (selectInfo) => {
+//     const today = new Date();
+//     today.setHours(0, 0, 0, 0);
+//     const selectedDate = new Date(selectInfo.startStr);
+//     if (selectedDate < today) return alert("You cannot book a session in the past!");
+
+//     setSelectedSlot({
+//       date: selectInfo.startStr.split("T")[0],
+//       start: selectInfo.startStr,
+//       end: selectInfo.endStr,
+//     });
+//     setCustomStart(selectInfo.startStr.substring(11, 16));
+//     setCustomEnd(selectInfo.endStr.substring(11, 16));
+//     setShowPopup(true);
+//   };
+
+//   const confirmBooking = async () => {
+//     if (!customStart || !customEnd) return alert("Please select both start and end times.");
+//     if (customEnd <= customStart) return alert("End time must be later than start time.");
+
+//     const startDateTime = `${selectedSlot.date}T${customStart}:00`;
+//     const endDateTime = `${selectedSlot.date}T${customEnd}:00`;
+//     const tutorUsername = sessionStorage.getItem("tutorUsername");
+
+//     try {
+//       setError("");
+//       await axios.post("http://localhost:4000/bookings", {
+//         tutorUsername, studentUsername, start: startDateTime, end: endDateTime, status: "pending",
+//       }, { headers: { Authorization: `Bearer ${token}` }, timeout: 5000 });
+//       setSuccess("Booking request sent!");
+//       fetchBookings();
+//     } catch (err) {
+//       console.error(err);
+//       if (err.response?.status === 409) setError("This time slot is already booked. Please choose another.");
+//       else setError("Error creating booking. Please try again.");
+//     } finally {
+//       setShowPopup(false);
+//       setSelectedSlot(null);
+//     }
+//   };
+
+//   const handleIncomingCallResponse = (accept) => {
+//     setShowIncomingCall(false);
+//     if (accept && callData) {
+//       navigate(`/video-call?bookingId=${callData.bookingId}&roomId=${callData.roomId}&type=student&name=${encodeURIComponent(studentUsername)}`);
+//     }
+//   };
+
+//   const getEventDisplay = (booking) => {
+//     const onlineIndicator = onlineStatus[booking.tutorUsername] ? " 🟢" : " 🔴";
+//     switch (booking.status) {
+//       case "accepted": return { title: `✅ ${booking.tutorUsername}${onlineIndicator}`, backgroundColor: "#28a745" };
+//       case "rejected": return { title: `❌ ${booking.tutorUsername}`, backgroundColor: "#dc3545" };
+//       default: return { title: `⏳ ${booking.tutorUsername}${onlineIndicator}`, backgroundColor: "#ffc107" };
+//     }
+//   };
+
+//   const handleEventClick = (info) => {
+//     const booking = info.event.extendedProps;
+//     if (booking.status === "accepted") {
+//       if (booking.roomId) navigate(`/video-call?bookingId=${booking.id}&roomId=${booking.roomId}&type=student&name=${encodeURIComponent(studentUsername)}`);
+//       else setError("Waiting for teacher to start the call.");
+//     } else if (booking.status === "pending") setError("Your booking request is still pending approval.");
+//     else setError("This booking was rejected. Please create a new one.");
+//   };
+
+//   const eventContent = (eventInfo) => {
+//     const display = getEventDisplay(eventInfo.event.extendedProps);
+//     return (
+//       <div style={{ backgroundColor: display.backgroundColor, color: "white", padding: "4px 6px", borderRadius: "4px", width: "100%", fontWeight: 500, fontSize: "0.9rem", textAlign: "center" }}>
+//         {display.title}
+//       </div>
+//     );
+//   };
+
+//   useEffect(() => {
+//     if (error || success) {
+//       const timer = setTimeout(() => { setError(""); setSuccess(""); }, 5000);
+//       return () => clearTimeout(timer);
+//     }
+//   }, [error, success]);
+
+//   return (
+//     <Container fluid style={{ backgroundColor: "#f7f9fc", minHeight: "100vh", padding: "30px" }}>
+//       <Card className="shadow-sm" style={{ borderRadius: "10px", border: "none" }}>
+//         <Card.Body>
+//           <h3 className="mb-4 text-white p-3 rounded" style={{ background: "linear-gradient(90deg, #007bff, #6610f2)", textAlign: "center" }}>
+//             📅 Student's Session Calendar
+//           </h3>
+//           {error && <Alert variant="danger">{error}</Alert>}
+//           {success && <Alert variant="success">{success}</Alert>}
+//           <Alert variant="info" className="mb-3"><strong>Status Indicators:</strong> 🟢 Tutor online | 🔴 Tutor offline</Alert>
+
+//           {loading ? (
+//             <div className="text-center p-5">
+//               <Spinner animation="border" role="status" className="text-primary" />
+//               <p className="mt-3">Loading calendar...</p>
+//             </div>
+//           ) : (
+//             <FullCalendar
+//               plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+//               initialView="dayGridMonth"
+//               selectable
+//               select={handleDateSelect}
+//               validRange={{ start: new Date().toISOString().split("T")[0] }}
+//               events={events.map(b => ({ id: b.id, start: b.start, end: b.end, extendedProps: b }))}
+//               eventContent={eventContent}
+//               eventClick={handleEventClick}
+//               height="80vh"
+//             />
+//           )}
+//         </Card.Body>
+//       </Card>
+
+//       {/* Booking modal */}
+//       {showPopup && (
+//         <div className="d-flex justify-content-center align-items-center" style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", backgroundColor: "rgba(0,0,0,0.5)", zIndex: 9999 }} onClick={() => setShowPopup(false)}>
+//           <div className="p-4 rounded shadow-lg" style={{ background: "white", width: "400px", animation: "fadeIn 0.3s ease-in-out" }} onClick={e => e.stopPropagation()}>
+//             <h4 className="mb-3 text-primary">Confirm Your Booking</h4>
+//             <p><strong>Date:</strong> {selectedSlot?.date}</p>
+//             <div className="mb-3">
+//               <label className="form-label fw-bold">Start Time</label>
+//               <input type="time" className="form-control" value={customStart} onChange={(e) => setCustomStart(e.target.value)} />
+//             </div>
+//             <div className="mb-3">
+//               <label className="form-label fw-bold">End Time</label>
+//               <input type="time" className="form-control" value={customEnd} onChange={(e) => setCustomEnd(e.target.value)} />
+//             </div>
+//             <div className="d-flex justify-content-between mt-4">
+//               <button className="btn btn-outline-secondary px-4" onClick={() => setShowPopup(false)}>Cancel</button>
+//               <button className="btn btn-primary px-4" onClick={confirmBooking}>Send Request</button>
+//             </div>
+//           </div>
+//         </div>
+//       )}
+
+//       {/* Incoming call modal */}
+//       <Modal show={showIncomingCall} onHide={() => handleIncomingCallResponse(false)} centered>
+//         <Modal.Header closeButton>
+//           <Modal.Title>Incoming Video Call</Modal.Title>
+//         </Modal.Header>
+//         <Modal.Body>
+//           <p><strong>{callData?.tutorUsername}</strong> is starting a video call for your session.</p>
+//           <p>Would you like to join now?</p>
+//         </Modal.Body>
+//         <Modal.Footer>
+//           <Button variant="secondary" onClick={() => handleIncomingCallResponse(false)}>Decline</Button>
+//           <Button variant="primary" onClick={() => handleIncomingCallResponse(true)}>Accept Call</Button>
+//         </Modal.Footer>
+//       </Modal>
+
+//       <style>
+//         {`@keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }`}
+//       </style>
+//     </Container>
+//   );
+// };
+
+// export default Calendar;
+
+
+
+
+
 import React, { useEffect, useState, useCallback } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
@@ -4859,30 +5941,29 @@ const Calendar = () => {
   const token = sessionStorage.getItem("token");
   const navigate = useNavigate();
 
-  // Fetch student's bookings
-  const fetchBookings = useCallback(() => {
+  const fetchBookings = useCallback(async () => {
     setLoading(true);
     setError("");
-    axios
-      .get(`http://localhost:4000/student/bookings?username=${studentUsername}`, {
+    try {
+      const res = await axios.get(`http://localhost:4000/student/bookings?username=${studentUsername}`, {
         headers: { Authorization: `Bearer ${token}` },
         timeout: 10000,
-      })
-      .then((res) => {
-        const bookings = res.data || [];
-        setEvents(bookings);
-        const statusUpdate = {};
-        bookings.forEach((b) => { statusUpdate[b.tutorUsername] = false; });
-        setOnlineStatus(statusUpdate);
-      })
-      .catch((err) => {
-        console.error("Error fetching bookings:", err);
-        setError("Failed to load bookings. Please try again.");
-      })
-      .finally(() => setLoading(false));
+      });
+      const bookings = res.data || [];
+      setEvents(bookings);
+      const statusUpdate = {};
+      bookings.forEach((b) => {
+        statusUpdate[b.tutorUsername] = false;
+      });
+      setOnlineStatus(statusUpdate);
+    } catch (err) {
+      console.error("Error fetching bookings:", err);
+      setError("Failed to load bookings. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   }, [studentUsername, token]);
 
-  // Socket listeners
   useEffect(() => {
     fetchBookings();
 
@@ -4913,7 +5994,6 @@ const Calendar = () => {
     };
   }, [studentUsername, fetchBookings]);
 
-  // Date selection
   const handleDateSelect = (selectInfo) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -4930,7 +6010,6 @@ const Calendar = () => {
     setShowPopup(true);
   };
 
-  // Confirm booking
   const confirmBooking = async () => {
     if (!customStart || !customEnd) return alert("Please select both start and end times.");
     if (customEnd <= customStart) return alert("End time must be later than start time.");
@@ -4941,9 +6020,11 @@ const Calendar = () => {
 
     try {
       setError("");
-      await axios.post("http://localhost:4000/bookings", {
-        tutorUsername, studentUsername, start: startDateTime, end: endDateTime, status: "pending",
-      }, { headers: { Authorization: `Bearer ${token}` }, timeout: 5000 });
+      await axios.post(
+        "http://localhost:4000/bookings",
+        { tutorUsername, studentUsername, start: startDateTime, end: endDateTime, status: "pending" },
+        { headers: { Authorization: `Bearer ${token}` }, timeout: 5000 }
+      );
       setSuccess("Booking request sent!");
       fetchBookings();
     } catch (err) {
@@ -4956,63 +6037,69 @@ const Calendar = () => {
     }
   };
 
-  // Incoming call response
   const handleIncomingCallResponse = (accept) => {
     setShowIncomingCall(false);
     if (accept && callData) {
-      navigate(`/video-call?roomId=${callData.roomId}&type=student&name=${encodeURIComponent(studentUsername)}`);
+      navigate(
+        `/video-call?bookingId=${callData.bookingId}&roomId=${callData.roomId}&type=student&name=${encodeURIComponent(
+          studentUsername
+        )}`
+      );
     }
   };
 
-  // Join existing call
-  const joinCall = async (bookingId) => {
-    try {
-      setError("");
-      const res = await axios.get(`http://localhost:4000/get-call/${bookingId}`, {
-        headers: { Authorization: `Bearer ${token}` }, timeout: 5000,
-      });
-      if (res.data.roomId) navigate(`/video-call?roomId=${res.data.roomId}&type=student&name=${encodeURIComponent(studentUsername)}`);
-      else setError("No active call for this booking. Wait for the teacher.");
-    } catch (err) {
-      console.error(err);
-      setError("Could not join call. Please try again.");
-    }
-  };
-
-  // Event display logic
   const getEventDisplay = (booking) => {
     const onlineIndicator = onlineStatus[booking.tutorUsername] ? " 🟢" : " 🔴";
     switch (booking.status) {
-      case "accepted": return { title: `✅ ${booking.tutorUsername}${onlineIndicator}`, backgroundColor: "#28a745" };
-      case "rejected": return { title: `❌ ${booking.tutorUsername}`, backgroundColor: "#dc3545" };
-      default: return { title: `⏳ ${booking.tutorUsername}${onlineIndicator}`, backgroundColor: "#ffc107" };
+      case "accepted":
+        return { title: `✅ ${booking.tutorUsername}${onlineIndicator}`, backgroundColor: "#28a745" };
+      case "rejected":
+        return { title: `❌ ${booking.tutorUsername}`, backgroundColor: "#dc3545" };
+      default:
+        return { title: `⏳ ${booking.tutorUsername}${onlineIndicator}`, backgroundColor: "#ffc107" };
     }
   };
 
-  // Event click
   const handleEventClick = (info) => {
     const booking = info.event.extendedProps;
     if (booking.status === "accepted") {
-      if (booking.roomId) navigate(`/video-call?roomId=${booking.roomId}&type=student&name=${encodeURIComponent(studentUsername)}`);
+      if (booking.roomId)
+        navigate(
+          `/video-call?bookingId=${booking.id}&roomId=${booking.roomId}&type=student&name=${encodeURIComponent(
+            studentUsername
+          )}`
+        );
       else setError("Waiting for teacher to start the call.");
     } else if (booking.status === "pending") setError("Your booking request is still pending approval.");
     else setError("This booking was rejected. Please create a new one.");
   };
 
-  // Event content
   const eventContent = (eventInfo) => {
     const display = getEventDisplay(eventInfo.event.extendedProps);
     return (
-      <div style={{ backgroundColor: display.backgroundColor, color: "white", padding: "4px 6px", borderRadius: "4px", width: "100%", fontWeight: 500, fontSize: "0.9rem", textAlign: "center" }}>
+      <div
+        style={{
+          backgroundColor: display.backgroundColor,
+          color: "white",
+          padding: "4px 6px",
+          borderRadius: "4px",
+          width: "100%",
+          fontWeight: 500,
+          fontSize: "0.9rem",
+          textAlign: "center",
+        }}
+      >
         {display.title}
       </div>
     );
   };
 
-  // Auto-clear messages
   useEffect(() => {
     if (error || success) {
-      const timer = setTimeout(() => { setError(""); setSuccess(""); }, 5000);
+      const timer = setTimeout(() => {
+        setError("");
+        setSuccess("");
+      }, 5000);
       return () => clearTimeout(timer);
     }
   }, [error, success]);
@@ -5021,12 +6108,17 @@ const Calendar = () => {
     <Container fluid style={{ backgroundColor: "#f7f9fc", minHeight: "100vh", padding: "30px" }}>
       <Card className="shadow-sm" style={{ borderRadius: "10px", border: "none" }}>
         <Card.Body>
-          <h3 className="mb-4 text-white p-3 rounded" style={{ background: "linear-gradient(90deg, #007bff, #6610f2)", textAlign: "center" }}>
+          <h3
+            className="mb-4 text-white p-3 rounded"
+            style={{ background: "linear-gradient(90deg, #007bff, #6610f2)", textAlign: "center" }}
+          >
             📅 Student's Session Calendar
           </h3>
           {error && <Alert variant="danger">{error}</Alert>}
           {success && <Alert variant="success">{success}</Alert>}
-          <Alert variant="info" className="mb-3"><strong>Status Indicators:</strong> 🟢 Tutor online | 🔴 Tutor offline</Alert>
+          <Alert variant="info" className="mb-3">
+            <strong>Status Indicators:</strong> 🟢 Tutor online | 🔴 Tutor offline
+          </Alert>
 
           {loading ? (
             <div className="text-center p-5">
@@ -5040,7 +6132,7 @@ const Calendar = () => {
               selectable
               select={handleDateSelect}
               validRange={{ start: new Date().toISOString().split("T")[0] }}
-              events={events.map(b => ({ id: b.id, start: b.start, end: b.end, extendedProps: b }))}
+              events={events.map((b) => ({ id: b.id, start: b.start, end: b.end, extendedProps: b }))}
               eventContent={eventContent}
               eventClick={handleEventClick}
               height="80vh"
@@ -5051,44 +6143,41 @@ const Calendar = () => {
 
       {/* Booking modal */}
       {showPopup && (
-        <div className="d-flex justify-content-center align-items-center" style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", backgroundColor: "rgba(0,0,0,0.5)", zIndex: 9999 }} onClick={() => setShowPopup(false)}>
-          <div className="p-4 rounded shadow-lg" style={{ background: "white", width: "400px", animation: "fadeIn 0.3s ease-in-out" }} onClick={e => e.stopPropagation()}>
+        <div
+          className="d-flex justify-content-center align-items-center"
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            backgroundColor: "rgba(0,0,0,0.5)",
+            zIndex: 9999,
+          }}
+          onClick={() => setShowPopup(false)}
+        >
+          <div
+            className="p-4 rounded shadow-lg"
+            style={{ background: "white", width: "400px", animation: "fadeIn 0.3s ease-in-out" }}
+            onClick={(e) => e.stopPropagation()}
+          >
             <h4 className="mb-3 text-primary">Confirm Your Booking</h4>
-            <p><strong>Date:</strong> {selectedSlot?.date}</p>
+            <p>
+              <strong>Date:</strong> {selectedSlot?.date}
+            </p>
             <div className="mb-3">
-              <label className="form-label fw-bold">
-
-              Start Time
-              </label>
-              <input
-                type="time"
-                className="form-control"
-                value={customStart}
-                onChange={(e) => setCustomStart(e.target.value)}
-              />
+              <label className="form-label fw-bold">Start Time</label>
+              <input type="time" className="form-control" value={customStart} onChange={(e) => setCustomStart(e.target.value)} />
             </div>
             <div className="mb-3">
-              <label className="form-label fw-bold">
-                End Time
-              </label>
-              <input
-                type="time"
-                className="form-control"
-                value={customEnd}
-                onChange={(e) => setCustomEnd(e.target.value)}
-              />
+              <label className="form-label fw-bold">End Time</label>
+              <input type="time" className="form-control" value={customEnd} onChange={(e) => setCustomEnd(e.target.value)} />
             </div>
             <div className="d-flex justify-content-between mt-4">
-              <button
-                className="btn btn-outline-secondary px-4"
-                onClick={() => setShowPopup(false)}
-              >
+              <button className="btn btn-outline-secondary px-4" onClick={() => setShowPopup(false)}>
                 Cancel
               </button>
-              <button
-                className="btn btn-primary px-4"
-                onClick={confirmBooking}
-              >
+              <button className="btn btn-primary px-4" onClick={confirmBooking}>
                 Send Request
               </button>
             </div>
@@ -5097,45 +6186,27 @@ const Calendar = () => {
       )}
 
       {/* Incoming call modal */}
-      <Modal
-        show={showIncomingCall}
-        onHide={() => handleIncomingCallResponse(false)}
-        centered
-      >
+      <Modal show={showIncomingCall} onHide={() => handleIncomingCallResponse(false)} centered>
         <Modal.Header closeButton>
           <Modal.Title>Incoming Video Call</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <p>
-            <strong>{callData?.tutorUsername}</strong> is starting a video call
-            for your session.
+            <strong>{callData?.tutorUsername}</strong> is starting a video call for your session.
           </p>
           <p>Would you like to join now?</p>
         </Modal.Body>
         <Modal.Footer>
-          <Button
-            variant="secondary"
-            onClick={() => handleIncomingCallResponse(false)}
-          >
+          <Button variant="secondary" onClick={() => handleIncomingCallResponse(false)}>
             Decline
           </Button>
-          <Button
-            variant="primary"
-            onClick={() => handleIncomingCallResponse(true)}
-          >
+          <Button variant="primary" onClick={() => handleIncomingCallResponse(true)}>
             Accept Call
           </Button>
         </Modal.Footer>
       </Modal>
 
-      <style>
-        {`
-          @keyframes fadeIn {
-            from { opacity: 0; transform: scale(0.9); }
-            to { opacity: 1; transform: scale(1); }
-          }
-        `}
-      </style>
+      <style>{`@keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }`}</style>
     </Container>
   );
 };
