@@ -1,6 +1,8 @@
 
 
 import React from 'react';
+// import App from './App';
+
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -45,3 +47,71 @@ class ErrorBoundary extends React.Component {
 }
 
 export default ErrorBoundary;
+
+
+
+
+// import { ErrorBoundary } from "react-error-boundary";
+
+// function ErrorFallback({ error, resetErrorBoundary }) {
+//   return (
+//     <div
+//       role="alert"
+//       style={{
+//         background: "linear-gradient(to right, #ffecd2, #fcb69f)",
+//         padding: "2rem",
+//         borderRadius: "12px",
+//         color: "#333",
+//       }}
+//     >
+//       <h2>Something went wrong.</h2>
+//       <pre style={{ color: "red" }}>{error.message}</pre>
+//       <button onClick={resetErrorBoundary}>Try again</button>
+//     </div>
+//   );
+// }
+
+// export default function AppWrapper() {
+//   return (
+//     <ErrorBoundary
+//       FallbackComponent={ErrorFallback}
+//       onReset={() => {
+//         // Reset app state if needed
+//       }}
+//     >
+//       <App />
+//     </ErrorBoundary>
+//   );
+// }
+
+
+
+
+
+// import React from "react";
+// import { ErrorBoundary } from "react-error-boundary";
+// import App from "./App"; // ✅ Make sure App.js exists in src folder
+
+// // Fallback UI
+// function ErrorFallback({ error, resetErrorBoundary }) {
+//   return (
+//     <div role="alert" style={{ padding: "20px", background: "#fee", color: "#900" }}>
+//       <h2>Something went wrong 😢</h2>
+//       <pre>{error.message}</pre>
+//       <button onClick={resetErrorBoundary}>Try again</button>
+//     </div>
+//   );
+// }
+
+// export default function AppWithErrorBoundary() {
+//   return (
+//     <ErrorBoundary
+//       FallbackComponent={ErrorFallback}
+//       onReset={() => {
+//         window.location.reload(); // reload on error reset
+//       }}
+//     >
+//       <App />
+//     </ErrorBoundary>
+//   );
+// }

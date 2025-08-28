@@ -923,208 +923,1145 @@
 
 
 
+// import React, { useEffect, useState } from "react";
+// import axios from "axios";
+// // import Titlewala from "./Titlewala";
+
+// const TeacherDashboard = () => {
+//   const [requests, setRequests] = useState([]);
+//   const [courses, setCourses] = useState([]);
+//   const [showAcceptModal, setShowAcceptModal] = useState(false);
+//   const [currentBookingId, setCurrentBookingId] = useState(null);
+//   const [acceptMessage, setAcceptMessage] = useState("");
+
+//   const tutorUsername = sessionStorage.getItem("tutorUsername");
+
+//   // Fetch pending requests
+//   useEffect(() => {
+//     if (!tutorUsername) return;
+//     axios
+//       .get(`http://localhost:4000/teacher/${tutorUsername}/requests`)
+//       .then((res) => setRequests(res.data))
+//       .catch((err) => console.error("Error fetching requests:", err));
+//   }, [tutorUsername]);
+
+//   // Fetch courses created by teacher
+//   useEffect(() => {
+//     if (!tutorUsername) return;
+//     axios
+//       .get(`http://localhost:4000/api/courses/by-teacher/${tutorUsername}`)
+//       .then((res) => setCourses(res.data))
+//       .catch((err) => console.error("Error fetching teacher courses:", err));
+//   }, [tutorUsername]);
+
+//   const handleReject = (id) => {
+//     if (window.confirm("Bhai sure hai request reject karni hai?")) {
+//       axios
+//         .post(`http://localhost:4000/teacher/requests/${id}/decision`, { decision: "rejected" })
+//         .then(() => setRequests((prev) => prev.filter((r) => r.id !== id)))
+//         .catch((err) => console.error("Error updating booking:", err));
+//     }
+//   };
+
+//   const handleOpenAcceptModal = (id) => {
+//     setCurrentBookingId(id);
+//     setAcceptMessage("");
+//     setShowAcceptModal(true);
+//   };
+
+//   const handleAcceptSubmit = () => {
+//     if (!acceptMessage.trim()) {
+//       alert("Please enter a message or link to send.");
+//       return;
+//     }
+
+//     axios
+//       .post(`http://localhost:4000/teacher/requests/${currentBookingId}/decision`, {
+//         decision: "accepted",
+//         message: acceptMessage,
+//       })
+//       .then(() => {
+//         setRequests((prev) => prev.filter((r) => r.id !== currentBookingId));
+//         setShowAcceptModal(false);
+//       })
+//       .catch((err) => console.error("Error updating booking:", err));
+//   };
+
+//   return (
+//     <>
+//       {/* <Titlewala /> */}
+
+//       <div style={{ background: "linear-gradient(to right, #f8f9fa, #e9ecef)", minHeight: "100vh", padding: "20px" }}>
+//         <div className="container mt-4">
+//           {/* Student Requests Section */}
+//           <div className="mb-5">
+//             <h4 className="mb-3 text-primary">Student Requests</h4>
+//             <div className="card shadow-sm border-info">
+//               <div className="card-body">
+//                 {requests.length === 0 ? (
+//                   <span className="text-muted">No pending requests</span>
+//                 ) : (
+//                   <table className="table table-striped">
+//                     <thead>
+//                       <tr>
+//                         <th>Student</th>
+//                         <th>Start</th>
+//                         <th>End</th>
+//                         <th>Action</th>
+//                       </tr>
+//                     </thead>
+//                     <tbody>
+//                       {requests.map((r) => (
+//                         <tr key={r.id}>
+//                           <td>{r.student_name}</td>
+//                           <td>{new Date(r.start).toLocaleString()}</td>
+//                           <td>{new Date(r.end).toLocaleString()}</td>
+//                           <td>
+//                             <button
+//                               className="btn btn-success btn-sm me-2"
+//                               onClick={() => handleOpenAcceptModal(r.id)}
+//                             >
+//                               Accept
+//                             </button>
+//                             <button
+//                               className="btn btn-danger btn-sm"
+//                               onClick={() => handleReject(r.id)}
+//                             >
+//                               Reject
+//                             </button>
+//                           </td>
+//                         </tr>
+//                       ))}
+//                     </tbody>
+//                   </table>
+//                 )}
+//               </div>
+//             </div>
+//           </div>
+
+//           {/* Courses Created by Teacher */}
+//           <div className="mb-5">
+//             <h4 className="mb-3 text-primary">My Courses</h4>
+//             <div className="row">
+//               {courses.length === 0 ? (
+//                 <span className="text-muted">You haven't created any courses yet.</span>
+//               ) : (
+//                 courses.map((course) => (
+//                   <div className="col-md-4 mb-4" key={course.id}>
+//                     <div className="card shadow-sm h-100">
+//                       {course.thumbnail && (
+//                         <img
+//                           src={`http://localhost:4000/uploads/${course.thumbnail}`}
+//                           className="card-img-top"
+//                           alt={course.title}
+//                           style={{ height: "180px", objectFit: "cover" }}
+//                         />
+//                       )}
+//                       <div className="card-body d-flex flex-column">
+//                         <h5 className="card-title">{course.title}</h5>
+//                         <p className="card-text text-truncate">{course.description}</p>
+//                         <p className="mt-auto mb-1">
+//                           <strong>Category:</strong> {course.category}
+//                         </p>
+//                         <p className="mb-1">
+//                           <strong>Level:</strong> {course.level} | <strong>Duration:</strong> {course.duration} hrs
+//                         </p>
+//                         <p className="mb-1">
+//                           <strong>Price:</strong> ${course.price}
+//                         </p>
+//                       </div>
+//                     </div>
+//                   </div>
+//                 ))
+//               )}
+//             </div>
+//           </div>
+
+//           {/* Modal for Accept message */}
+//           {showAcceptModal && (
+//             <div
+//               className="modal"
+//               style={{
+//                 display: "block",
+//                 backgroundColor: "rgba(0,0,0,0.5)",
+//                 position: "fixed",
+//                 top: 0,
+//                 left: 0,
+//                 width: "100%",
+//                 height: "100%",
+//                 zIndex: 1050,
+//               }}
+//             >
+//               <div
+//                 className="modal-dialog"
+//                 style={{ maxWidth: "500px", margin: "100px auto" }}
+//               >
+//                 <div className="modal-content p-3">
+//                   <h5>Are you sure you want to accept?</h5>
+//                   <textarea
+//                     className="form-control mb-3"
+//                     rows={3}
+//                     placeholder="Enter message or video call link for student..."
+//                     value={acceptMessage}
+//                     onChange={(e) => setAcceptMessage(e.target.value)}
+//                   />
+//                   <div className="d-flex justify-content-end">
+//                     <button
+//                       className="btn btn-secondary me-2"
+//                       onClick={() => setShowAcceptModal(false)}
+//                     >
+//                       Cancel
+//                     </button>
+//                     <button className="btn btn-primary" onClick={handleAcceptSubmit}>
+//                       Confirm Accept
+//                     </button>
+//                   </div>
+//                 </div>
+//               </div>
+//             </div>
+//           )}
+
+//         </div>
+//       </div>
+//     </>
+//   );
+// };
+
+// export default TeacherDashboard;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// import React, { useEffect, useState } from "react";
+// import axios from "axios";
+
+// const TeacherDashboard = () => {
+//   const [calendarRequests, setCalendarRequests] = useState([]); // Old feature
+//   const [liveClassRequests, setLiveClassRequests] = useState([]); // New feature
+//   const [courses, setCourses] = useState([]);
+//   const [showAcceptModal, setShowAcceptModal] = useState(false);
+//   const [currentRequest, setCurrentRequest] = useState(null);
+//   const [acceptMessage, setAcceptMessage] = useState("");
+
+//   const tutorUsername = sessionStorage.getItem("tutorUsername");
+
+//   // ---------------- Fetch old calendar requests ----------------
+//   const fetchCalendarRequests = () => {
+//     if (!tutorUsername) return;
+//     axios
+//       .get(`http://localhost:4000/teacher/${tutorUsername}/requests`)
+//       .then((res) => setCalendarRequests(res.data))
+//       .catch((err) => console.error("Error fetching calendar requests:", err));
+//   };
+
+//   useEffect(() => {
+//     fetchCalendarRequests();
+//   }, [tutorUsername]);
+
+//   // ---------------- Fetch new live class requests ----------------
+//   const fetchLiveClassRequests = () => {
+//     if (!tutorUsername) return;
+//     axios
+//       .get(`http://localhost:4000/api/liveclass/requests/${tutorUsername}`)
+//       .then((res) => setLiveClassRequests(res.data.requests))
+//       .catch((err) => console.error("Error fetching live class requests:", err));
+//   };
+
+//   useEffect(() => {
+//     fetchLiveClassRequests();
+//   }, [tutorUsername]);
+
+//   // ---------------- Fetch courses ----------------
+//   const fetchCourses = () => {
+//     if (!tutorUsername) return;
+//     axios
+//       .get(`http://localhost:4000/api/customcourses/${tutorUsername}`)
+//       .then((res) => setCourses(res.data.courses))
+//       .catch((err) => console.error("Error fetching courses:", err));
+//   };
+
+//   useEffect(() => {
+//     fetchCourses();
+//   }, [tutorUsername]);
+
+//   // ---------------- Handle reject ----------------
+//   const handleReject = (id, type) => {
+//     if (!window.confirm("Are you sure you want to reject this request?")) return;
+
+//     const url =
+//       type === "calendar"
+//         ? `http://localhost:4000/teacher/requests/${id}/decision`
+//         : `http://localhost:4000/api/liveclass/requests/${id}`;
+
+//     axios
+//       .put(url, { status: "rejected" })
+//       .then(() => {
+//         if (type === "calendar") {
+//           setCalendarRequests((prev) => prev.filter((r) => r.id !== id));
+//         } else {
+//           setLiveClassRequests((prev) => prev.filter((r) => r.id !== id));
+//         }
+//       })
+//       .catch((err) => console.error("Error rejecting request:", err));
+//   };
+
+//   // ---------------- Open accept modal ----------------
+//   const handleOpenAcceptModal = (request, type) => {
+//     setCurrentRequest({ ...request, type });
+//     setAcceptMessage("");
+//     setShowAcceptModal(true);
+//   };
+
+//   // ---------------- Accept request ----------------
+//   const handleAcceptSubmit = () => {
+//     if (!acceptMessage.trim()) {
+//       alert("Please enter a message or link for the student.");
+//       return;
+//     }
+
+//     const { id, type } = currentRequest;
+
+//     const url =
+//       type === "calendar"
+//         ? `http://localhost:4000/teacher/requests/${id}/decision`
+//         : `http://localhost:4000/api/liveclass/requests/${id}`;
+
+//     const payload =
+//       type === "calendar"
+//         ? { decision: "accepted", message: acceptMessage }
+//         : { status: "accepted", message: acceptMessage };
+
+//     axios
+//       .put(url, payload)
+//       .then(() => {
+//         if (type === "calendar") {
+//           setCalendarRequests((prev) => prev.filter((r) => r.id !== id));
+//         } else {
+//           setLiveClassRequests((prev) => prev.filter((r) => r.id !== id));
+//         }
+//         setShowAcceptModal(false);
+//       })
+//       .catch((err) => console.error("Error accepting request:", err));
+//   };
+
+//   return (
+//     <div style={{ background: "linear-gradient(to right, #f8f9fa, #e9ecef)", minHeight: "100vh", padding: "20px" }}>
+//       <div className="container mt-4">
+
+//         {/* ---------------- Old Calendar Requests ---------------- */}
+//         <div className="mb-5">
+//           <h4 className="mb-3 text-primary">Student Calendar Requests</h4>
+//           <div className="card shadow-sm border-info">
+//             <div className="card-body">
+//               {calendarRequests.length === 0 ? (
+//                 <span className="text-muted">No pending calendar requests</span>
+//               ) : (
+//                 <table className="table table-striped">
+//                   <thead>
+//                     <tr>
+//                       <th>Student</th>
+//                       <th>Start</th>
+//                       <th>End</th>
+//                       <th>Action</th>
+//                     </tr>
+//                   </thead>
+//                   <tbody>
+//                     {calendarRequests.map((r) => (
+//                       <tr key={r.id}>
+//                         <td>{r.student_name}</td>
+//                         <td>{new Date(r.start).toLocaleString()}</td>
+//                         <td>{new Date(r.end).toLocaleString()}</td>
+//                         <td>
+//                           <button
+//                             className="btn btn-success btn-sm me-2"
+//                             onClick={() => handleOpenAcceptModal(r, "calendar")}
+//                           >
+//                             Accept
+//                           </button>
+//                           <button
+//                             className="btn btn-danger btn-sm"
+//                             onClick={() => handleReject(r.id, "calendar")}
+//                           >
+//                             Reject
+//                           </button>
+//                         </td>
+//                       </tr>
+//                     ))}
+//                   </tbody>
+//                 </table>
+//               )}
+//             </div>
+//           </div>
+//         </div>
+
+//         {/* ---------------- New Live Class Requests ---------------- */}
+//         <div className="mb-5">
+//           <h4 className="mb-3 text-primary">Live Class Requests</h4>
+//           <div className="card shadow-sm border-info">
+//             <div className="card-body">
+//               {liveClassRequests.length === 0 ? (
+//                 <span className="text-muted">No pending live class requests</span>
+//               ) : (
+//                 <table className="table table-striped">
+//                   <thead>
+//                     <tr>
+//                       <th>Student</th>
+//                       <th>Course</th>
+//                       <th>Message</th>
+//                       <th>Action</th>
+//                     </tr>
+//                   </thead>
+//                   <tbody>
+//                     {liveClassRequests.map((r) => (
+//                       <tr key={r.id}>
+//                         <td>{r.studentUsername}</td>
+//                         <td>{r.courseName || "N/A"}</td>
+//                         <td>{r.message || "No message"}</td>
+//                         <td>
+//                           <button
+//                             className="btn btn-success btn-sm me-2"
+//                             onClick={() => handleOpenAcceptModal(r, "live")}
+//                           >
+//                             Accept
+//                           </button>
+//                           <button
+//                             className="btn btn-danger btn-sm"
+//                             onClick={() => handleReject(r.id, "live")}
+//                           >
+//                             Reject
+//                           </button>
+//                         </td>
+//                       </tr>
+//                     ))}
+//                   </tbody>
+//                 </table>
+//               )}
+//             </div>
+//           </div>
+//         </div>
+
+//         {/* ---------------- Courses Section ---------------- */}
+//         <div className="mb-5">
+//           <h4 className="mb-3 text-primary">My Courses</h4>
+//           <div className="row">
+//             {courses.length === 0 ? (
+//               <span className="text-muted">You haven't created any courses yet.</span>
+//             ) : (
+//               courses.map((course) => (
+//                 <div className="col-md-4 mb-4" key={course.id}>
+//                   <div className="card shadow-sm h-100">
+//                     {course.video && (
+//                       <video src={`http://localhost:4000${course.video}`} controls style={{ height: "180px", objectFit: "cover" }} />
+//                     )}
+//                     <div className="card-body d-flex flex-column">
+//                       <h5 className="card-title">{course.cname}</h5>
+//                       <p className="card-text text-truncate">{course.bdesc || "No description provided"}</p>
+//                       <button className="btn btn-primary mt-auto" disabled>
+//                         Live Class
+//                       </button>
+//                     </div>
+//                   </div>
+//                 </div>
+//               ))
+//             )}
+//           </div>
+//         </div>
+
+//         {/* ---------------- Accept Modal ---------------- */}
+//         {showAcceptModal && (
+//           <div className="modal" style={{ display: "block", backgroundColor: "rgba(0,0,0,0.5)", position: "fixed", top: 0, left: 0, width: "100%", height: "100%", zIndex: 1050 }}>
+//             <div className="modal-dialog" style={{ maxWidth: "500px", margin: "100px auto" }}>
+//               <div className="modal-content p-3">
+//                 <h5>Send message or link to student</h5>
+//                 <textarea
+//                   className="form-control mb-3"
+//                   rows={3}
+//                   placeholder="Enter message or link..."
+//                   value={acceptMessage}
+//                   onChange={(e) => setAcceptMessage(e.target.value)}
+//                 />
+//                 <div className="d-flex justify-content-end">
+//                   <button className="btn btn-secondary me-2" onClick={() => setShowAcceptModal(false)}>
+//                     Cancel
+//                   </button>
+//                   <button className="btn btn-primary" onClick={handleAcceptSubmit}>
+//                     Confirm Accept
+//                   </button>
+//                 </div>
+//               </div>
+//             </div>
+//           </div>
+//         )}
+
+//       </div>
+//     </div>
+//   );
+// };
+
+// export default TeacherDashboard;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// import React, { useEffect, useState } from "react";
+// import axios from "axios";
+
+// const TeacherDashboard = () => {
+//   const [calendarRequests, setCalendarRequests] = useState([]); // Old feature
+//   const [liveClassRequests, setLiveClassRequests] = useState([]); // New feature
+//   const [courses, setCourses] = useState([]);
+//   const [showAcceptModal, setShowAcceptModal] = useState(false);
+//   const [currentRequest, setCurrentRequest] = useState(null);
+//   const [acceptMessage, setAcceptMessage] = useState("");
+
+//   const tutorUsername = sessionStorage.getItem("tutorUsername");
+
+//   // ---------------- Fetch old calendar requests ----------------
+//   const fetchCalendarRequests = () => {
+//     if (!tutorUsername) return;
+//     axios
+//       .get(`http://localhost:4000/teacher/${tutorUsername}/requests`)
+//       .then((res) => setCalendarRequests(res.data || []))
+//       .catch((err) => console.error("Error fetching calendar requests:", err));
+//   };
+
+//   useEffect(() => {
+//     fetchCalendarRequests();
+//   }, [tutorUsername]);
+
+//   // ---------------- Fetch new live class requests ----------------
+//   const fetchLiveClassRequests = () => {
+//     if (!tutorUsername) return;
+//     axios
+//       .get(`http://localhost:4000/api/liveclass/requests/${tutorUsername}`)
+//       .then((res) => setLiveClassRequests(res.data.requests || []))
+//       .catch((err) => console.error("Error fetching live class requests:", err));
+//   };
+
+//   useEffect(() => {
+//     fetchLiveClassRequests();
+//   }, [tutorUsername]);
+
+//   // ---------------- Fetch courses ----------------
+//   const fetchCourses = () => {
+//     if (!tutorUsername) return;
+//     axios
+//       .get(`http://localhost:4000/api/customcourses/${tutorUsername}`)
+//       .then((res) => setCourses(res.data.courses || []))
+//       .catch((err) => console.error("Error fetching courses:", err));
+//   };
+
+//   useEffect(() => {
+//     fetchCourses();
+//   }, [tutorUsername]);
+
+//   // ---------------- Handle reject ----------------
+//   const handleReject = (id, type) => {
+//     if (!window.confirm("Are you sure you want to reject this request?")) return;
+
+//     const url =
+//       type === "calendar"
+//         ? `http://localhost:4000/teacher/requests/${id}/decision`
+//         : `http://localhost:4000/api/liveclass/requests/${id}`;
+
+//     const payload = type === "calendar" ? { decision: "rejected" } : { status: "rejected" };
+
+//     axios
+//       .put(url, payload)
+//       .then(() => {
+//         if (type === "calendar") {
+//           setCalendarRequests((prev) => prev.filter((r) => r.id !== id));
+//         } else {
+//           setLiveClassRequests((prev) => prev.filter((r) => r.id !== id));
+//         }
+//       })
+//       .catch((err) => console.error("Error rejecting request:", err));
+//   };
+
+//   // ---------------- Open accept modal ----------------
+//   const handleOpenAcceptModal = (request, type) => {
+//     setCurrentRequest({ ...request, type });
+//     setAcceptMessage("");
+//     setShowAcceptModal(true);
+//   };
+
+//   // ---------------- Accept request ----------------
+//   const handleAcceptSubmit = () => {
+//     if (!acceptMessage.trim()) {
+//       alert("Please enter a message or link for the student.");
+//       return;
+//     }
+
+//     if (!currentRequest) return;
+
+//     const { id, type } = currentRequest;
+
+//     const url =
+//       type === "calendar"
+//         ? `http://localhost:4000/teacher/requests/${id}/decision`
+//         : `http://localhost:4000/api/liveclass/requests/${id}`;
+
+//     const payload =
+//       type === "calendar"
+//         ? { decision: "accepted", message: acceptMessage }
+//         : { status: "accepted", message: acceptMessage };
+
+//     axios
+//       .put(url, payload)
+//       .then(() => {
+//         if (type === "calendar") {
+//           setCalendarRequests((prev) => prev.filter((r) => r.id !== id));
+//         } else {
+//           setLiveClassRequests((prev) => prev.filter((r) => r.id !== id));
+//         }
+//         setShowAcceptModal(false);
+//         setCurrentRequest(null);
+//       })
+//       .catch((err) => console.error("Error accepting request:", err));
+//   };
+
+//   return (
+//     <div style={{ background: "linear-gradient(to right, #f8f9fa, #e9ecef)", minHeight: "100vh", padding: "20px" }}>
+//       <div className="container mt-4">
+
+//         {/* ---------------- Old Calendar Requests ---------------- */}
+//         <div className="mb-5">
+//           <h4 className="mb-3 text-primary">Student Calendar Requests</h4>
+//           <div className="card shadow-sm border-info">
+//             <div className="card-body">
+//               {calendarRequests.length === 0 ? (
+//                 <span className="text-muted">No pending calendar requests</span>
+//               ) : (
+//                 <table className="table table-striped">
+//                   <thead>
+//                     <tr>
+//                       <th>Student</th>
+//                       <th>Start</th>
+//                       <th>End</th>
+//                       <th>Action</th>
+//                     </tr>
+//                   </thead>
+//                   <tbody>
+//                     {calendarRequests.map((r) => (
+//                       <tr key={r.id}>
+//                         <td>{r.student_name}</td>
+//                         <td>{new Date(r.start).toLocaleString()}</td>
+//                         <td>{new Date(r.end).toLocaleString()}</td>
+//                         <td>
+//                           <button
+//                             className="btn btn-success btn-sm me-2"
+//                             onClick={() => handleOpenAcceptModal(r, "calendar")}
+//                           >
+//                             Accept
+//                           </button>
+//                           <button
+//                             className="btn btn-danger btn-sm"
+//                             onClick={() => handleReject(r.id, "calendar")}
+//                           >
+//                             Reject
+//                           </button>
+//                         </td>
+//                       </tr>
+//                     ))}
+//                   </tbody>
+//                 </table>
+//               )}
+//             </div>
+//           </div>
+//         </div>
+
+//         {/* ---------------- New Live Class Requests ---------------- */}
+//         <div className="mb-5">
+//           <h4 className="mb-3 text-primary">Live Class Requests</h4>
+//           <div className="card shadow-sm border-info">
+//             <div className="card-body">
+//               {liveClassRequests.length === 0 ? (
+//                 <span className="text-muted">No pending live class requests</span>
+//               ) : (
+//                 <table className="table table-striped">
+//                   <thead>
+//                     <tr>
+//                       <th>Student</th>
+//                       <th>Course</th>
+//                       <th>Message</th>
+//                       <th>Action</th>
+//                     </tr>
+//                   </thead>
+//                   <tbody>
+//                     {liveClassRequests.map((r) => (
+//                       <tr key={r.id}>
+//                         <td>{r.studentUsername}</td>
+//                         <td>{r.courseName || r.course_id || "N/A"}</td>
+//                         <td>{r.message || "No message"}</td>
+//                         <td>
+//                           <button
+//                             className="btn btn-success btn-sm me-2"
+//                             onClick={() => handleOpenAcceptModal(r, "live")}
+//                           >
+//                             Accept
+//                           </button>
+//                           <button
+//                             className="btn btn-danger btn-sm"
+//                             onClick={() => handleReject(r.id, "live")}
+//                           >
+//                             Reject
+//                           </button>
+//                         </td>
+//                       </tr>
+//                     ))}
+//                   </tbody>
+//                 </table>
+//               )}
+//             </div>
+//           </div>
+//         </div>
+
+//         {/* ---------------- Courses Section ---------------- */}
+//         <div className="mb-5">
+//           <h4 className="mb-3 text-primary">My Courses</h4>
+//           <div className="row">
+//             {courses.length === 0 ? (
+//               <span className="text-muted">You haven't created any courses yet.</span>
+//             ) : (
+//               courses.map((course) => (
+//                 <div className="col-md-4 mb-4" key={course.id}>
+//                   <div className="card shadow-sm h-100">
+//                     {course.video && (
+//                       <video src={`http://localhost:4000${course.video}`} controls style={{ height: "180px", objectFit: "cover" }} />
+//                     )}
+//                     <div className="card-body d-flex flex-column">
+//                       <h5 className="card-title">{course.cname}</h5>
+//                       <p className="card-text text-truncate">{course.bdesc || "No description provided"}</p>
+//                       <button className="btn btn-primary mt-auto" disabled>
+//                         Live Class
+//                       </button>
+//                     </div>
+//                   </div>
+//                 </div>
+//               ))
+//             )}
+//           </div>
+//         </div>
+
+//         {/* ---------------- Accept Modal ---------------- */}
+//         {showAcceptModal && currentRequest && (
+//           <div className="modal" style={{ display: "block", backgroundColor: "rgba(0,0,0,0.5)", position: "fixed", top: 0, left: 0, width: "100%", height: "100%", zIndex: 1050 }}>
+//             <div className="modal-dialog" style={{ maxWidth: "500px", margin: "100px auto" }}>
+//               <div className="modal-content p-3">
+//                 <h5>Send message or link to student</h5>
+//                 <textarea
+//                   className="form-control mb-3"
+//                   rows={3}
+//                   placeholder="Enter message or link..."
+//                   value={acceptMessage}
+//                   onChange={(e) => setAcceptMessage(e.target.value)}
+//                 />
+//                 <div className="d-flex justify-content-end">
+//                   <button className="btn btn-secondary me-2" onClick={() => setShowAcceptModal(false)}>
+//                     Cancel
+//                   </button>
+//                   <button className="btn btn-primary" onClick={handleAcceptSubmit}>
+//                     Confirm Accept
+//                   </button>
+//                 </div>
+//               </div>
+//             </div>
+//           </div>
+//         )}
+
+//       </div>
+//     </div>
+//   );
+// };
+
+// export default TeacherDashboard;
+
+
+
+
+
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-// import Titlewala from "./Titlewala";
 
 const TeacherDashboard = () => {
-  const [requests, setRequests] = useState([]);
+  const [calendarRequests, setCalendarRequests] = useState([]);
+  const [liveClassRequests, setLiveClassRequests] = useState([]);
   const [courses, setCourses] = useState([]);
   const [showAcceptModal, setShowAcceptModal] = useState(false);
-  const [currentBookingId, setCurrentBookingId] = useState(null);
+  const [currentRequest, setCurrentRequest] = useState(null);
   const [acceptMessage, setAcceptMessage] = useState("");
 
   const tutorUsername = sessionStorage.getItem("tutorUsername");
 
-  // Fetch pending requests
-  useEffect(() => {
+  // ---------------- Fetch old calendar requests ----------------
+  const fetchCalendarRequests = () => {
     if (!tutorUsername) return;
     axios
       .get(`http://localhost:4000/teacher/${tutorUsername}/requests`)
-      .then((res) => setRequests(res.data))
-      .catch((err) => console.error("Error fetching requests:", err));
-  }, [tutorUsername]);
-
-  // Fetch courses created by teacher
-  useEffect(() => {
-    if (!tutorUsername) return;
-    axios
-      .get(`http://localhost:4000/api/courses/by-teacher/${tutorUsername}`)
-      .then((res) => setCourses(res.data))
-      .catch((err) => console.error("Error fetching teacher courses:", err));
-  }, [tutorUsername]);
-
-  const handleReject = (id) => {
-    if (window.confirm("Bhai sure hai request reject karni hai?")) {
-      axios
-        .post(`http://localhost:4000/teacher/requests/${id}/decision`, { decision: "rejected" })
-        .then(() => setRequests((prev) => prev.filter((r) => r.id !== id)))
-        .catch((err) => console.error("Error updating booking:", err));
-    }
+      .then((res) => setCalendarRequests(res.data || []))
+      .catch((err) => console.error("Error fetching calendar requests:", err));
   };
 
-  const handleOpenAcceptModal = (id) => {
-    setCurrentBookingId(id);
+  useEffect(() => {
+    fetchCalendarRequests();
+  }, [tutorUsername]);
+
+  // ---------------- Fetch new live class requests ----------------
+  const fetchLiveClassRequests = () => {
+    if (!tutorUsername) return;
+    axios
+      .get(`http://localhost:4000/api/liveclass/requests/${tutorUsername}`)
+      .then((res) => setLiveClassRequests(res.data.requests || []))
+      .catch((err) => console.error("Error fetching live class requests:", err));
+  };
+
+  useEffect(() => {
+    fetchLiveClassRequests();
+  }, [tutorUsername]);
+
+  // ---------------- Fetch courses ----------------
+  const fetchCourses = () => {
+    if (!tutorUsername) return;
+    axios
+      .get(`http://localhost:4000/api/customcourses/${tutorUsername}`)
+      .then((res) => setCourses(res.data.courses || []))
+      .catch((err) => console.error("Error fetching courses:", err));
+  };
+
+  useEffect(() => {
+    fetchCourses();
+  }, [tutorUsername]);
+
+  // ---------------- Handle reject ----------------
+  const handleReject = (id, type) => {
+    if (!window.confirm("Are you sure you want to reject this request?")) return;
+
+    const url =
+      type === "calendar"
+        ? `http://localhost:4000/teacher/requests/${id}/decision`
+        : `http://localhost:4000/api/liveclass/requests/${id}`;
+
+    const payload = type === "calendar" ? { decision: "rejected" } : { status: "rejected" };
+
+    const req =
+      type === "calendar"
+        ? axios.post(url, payload)
+        : axios.put(url, payload);
+
+    req
+      .then(() => {
+        if (type === "calendar") {
+          fetchCalendarRequests();
+        } else {
+          fetchLiveClassRequests();
+        }
+      })
+      .catch((err) => console.error("Error rejecting request:", err));
+  };
+
+  // ---------------- Open accept modal ----------------
+  const handleOpenAcceptModal = (request, type) => {
+    setCurrentRequest({ ...request, type });
     setAcceptMessage("");
     setShowAcceptModal(true);
   };
 
+  // ---------------- Accept request ----------------
   const handleAcceptSubmit = () => {
     if (!acceptMessage.trim()) {
-      alert("Please enter a message or link to send.");
+      alert("Please enter a message or link for the student.");
       return;
     }
 
-    axios
-      .post(`http://localhost:4000/teacher/requests/${currentBookingId}/decision`, {
-        decision: "accepted",
-        message: acceptMessage,
-      })
+    if (!currentRequest) return;
+
+    const { id, type } = currentRequest;
+
+    const url =
+      type === "calendar"
+        ? `http://localhost:4000/teacher/requests/${id}/decision`
+        : `http://localhost:4000/api/liveclass/requests/${id}`;
+
+    const payload =
+      type === "calendar"
+        ? { decision: "accepted", message: acceptMessage }
+        : { status: "accepted", message: acceptMessage };
+
+    const req =
+      type === "calendar"
+        ? axios.post(url, payload)
+        : axios.put(url, payload);
+
+    req
       .then(() => {
-        setRequests((prev) => prev.filter((r) => r.id !== currentBookingId));
+        if (type === "calendar") {
+          fetchCalendarRequests();
+        } else {
+          fetchLiveClassRequests();
+        }
         setShowAcceptModal(false);
+        setCurrentRequest(null);
       })
-      .catch((err) => console.error("Error updating booking:", err));
+      .catch((err) => console.error("Error accepting request:", err));
   };
 
   return (
-    <>
-      {/* <Titlewala /> */}
+    <div style={{ background: "linear-gradient(to right, #f8f9fa, #e9ecef)", minHeight: "100vh", padding: "20px" }}>
+      <div className="container mt-4">
 
-      <div style={{ background: "linear-gradient(to right, #f8f9fa, #e9ecef)", minHeight: "100vh", padding: "20px" }}>
-        <div className="container mt-4">
-          {/* Student Requests Section */}
-          <div className="mb-5">
-            <h4 className="mb-3 text-primary">Student Requests</h4>
-            <div className="card shadow-sm border-info">
-              <div className="card-body">
-                {requests.length === 0 ? (
-                  <span className="text-muted">No pending requests</span>
-                ) : (
-                  <table className="table table-striped">
-                    <thead>
-                      <tr>
-                        <th>Student</th>
-                        <th>Start</th>
-                        <th>End</th>
-                        <th>Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {requests.map((r) => (
-                        <tr key={r.id}>
-                          <td>{r.student_name}</td>
-                          <td>{new Date(r.start).toLocaleString()}</td>
-                          <td>{new Date(r.end).toLocaleString()}</td>
-                          <td>
-                            <button
-                              className="btn btn-success btn-sm me-2"
-                              onClick={() => handleOpenAcceptModal(r.id)}
-                            >
-                              Accept
-                            </button>
-                            <button
-                              className="btn btn-danger btn-sm"
-                              onClick={() => handleReject(r.id)}
-                            >
-                              Reject
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Courses Created by Teacher */}
-          <div className="mb-5">
-            <h4 className="mb-3 text-primary">My Courses</h4>
-            <div className="row">
-              {courses.length === 0 ? (
-                <span className="text-muted">You haven't created any courses yet.</span>
+        {/* ---------------- Old Calendar Requests ---------------- */}
+        <div className="mb-5">
+          <h4 className="mb-3 text-primary">Student Calendar Requests</h4>
+          <div className="card shadow-sm border-info">
+            <div className="card-body">
+              {calendarRequests.length === 0 ? (
+                <span className="text-muted">No pending calendar requests</span>
               ) : (
-                courses.map((course) => (
-                  <div className="col-md-4 mb-4" key={course.id}>
-                    <div className="card shadow-sm h-100">
-                      {course.thumbnail && (
-                        <img
-                          src={`http://localhost:4000/uploads/${course.thumbnail}`}
-                          className="card-img-top"
-                          alt={course.title}
-                          style={{ height: "180px", objectFit: "cover" }}
-                        />
-                      )}
-                      <div className="card-body d-flex flex-column">
-                        <h5 className="card-title">{course.title}</h5>
-                        <p className="card-text text-truncate">{course.description}</p>
-                        <p className="mt-auto mb-1">
-                          <strong>Category:</strong> {course.category}
-                        </p>
-                        <p className="mb-1">
-                          <strong>Level:</strong> {course.level} | <strong>Duration:</strong> {course.duration} hrs
-                        </p>
-                        <p className="mb-1">
-                          <strong>Price:</strong> ${course.price}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ))
+                <table className="table table-striped">
+                  <thead>
+                    <tr>
+                      <th>Student</th>
+                      <th>Start</th>
+                      <th>End</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {calendarRequests.map((r) => (
+                      <tr key={r.id}>
+                        <td>{r.student_name}</td>
+                        <td>{new Date(r.start).toLocaleString()}</td>
+                        <td>{new Date(r.end).toLocaleString()}</td>
+                        <td>
+                          <button
+                            className="btn btn-success btn-sm me-2"
+                            onClick={() => handleOpenAcceptModal(r, "calendar")}
+                          >
+                            Accept
+                          </button>
+                          <button
+                            className="btn btn-danger btn-sm"
+                            onClick={() => handleReject(r.id, "calendar")}
+                          >
+                            Reject
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               )}
             </div>
           </div>
+        </div>
 
-          {/* Modal for Accept message */}
-          {showAcceptModal && (
-            <div
-              className="modal"
-              style={{
-                display: "block",
-                backgroundColor: "rgba(0,0,0,0.5)",
-                position: "fixed",
-                top: 0,
-                left: 0,
-                width: "100%",
-                height: "100%",
-                zIndex: 1050,
-              }}
-            >
-              <div
-                className="modal-dialog"
-                style={{ maxWidth: "500px", margin: "100px auto" }}
-              >
-                <div className="modal-content p-3">
-                  <h5>Are you sure you want to accept?</h5>
-                  <textarea
-                    className="form-control mb-3"
-                    rows={3}
-                    placeholder="Enter message or video call link for student..."
-                    value={acceptMessage}
-                    onChange={(e) => setAcceptMessage(e.target.value)}
-                  />
-                  <div className="d-flex justify-content-end">
-                    <button
-                      className="btn btn-secondary me-2"
-                      onClick={() => setShowAcceptModal(false)}
-                    >
-                      Cancel
-                    </button>
-                    <button className="btn btn-primary" onClick={handleAcceptSubmit}>
-                      Confirm Accept
-                    </button>
+        {/* ---------------- New Live Class Requests ---------------- */}
+        <div className="mb-5">
+          <h4 className="mb-3 text-primary">Live Class Requests</h4>
+          <div className="card shadow-sm border-info">
+            <div className="card-body">
+              {liveClassRequests.length === 0 ? (
+                <span className="text-muted">No pending live class requests</span>
+              ) : (
+                <table className="table table-striped">
+                  <thead>
+                    <tr>
+                      <th>Student</th>
+                      <th>Course</th>
+                      <th>Message</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {liveClassRequests.map((r) => (
+                      <tr key={r.id}>
+                        <td>{r.studentUsername}</td>
+                        <td>{r.courseName || r.course_id || "N/A"}</td>
+                        <td>{r.message || "No message"}</td>
+                        <td>
+                          <button
+                            className="btn btn-success btn-sm me-2"
+                            onClick={() => handleOpenAcceptModal(r, "live")}
+                          >
+                            Accept
+                          </button>
+                          <button
+                            className="btn btn-danger btn-sm"
+                            onClick={() => handleReject(r.id, "live")}
+                          >
+                            Reject
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* ---------------- Courses Section ---------------- */}
+        <div className="mb-5">
+          <h4 className="mb-3 text-primary">My Courses</h4>
+          <div className="row">
+            {courses.length === 0 ? (
+              <span className="text-muted">You haven't created any courses yet.</span>
+            ) : (
+              courses.map((course) => (
+                <div className="col-md-4 mb-4" key={course.id}>
+                  <div className="card shadow-sm h-100">
+                    {course.video && (
+                      <video src={`http://localhost:4000${course.video}`} controls style={{ height: "180px", objectFit: "cover" }} />
+                    )}
+                    <div className="card-body d-flex flex-column">
+                      <h5 className="card-title">{course.cname}</h5>
+                      <p className="card-text text-truncate">{course.bdesc || "No description provided"}</p>
+                      <button className="btn btn-primary mt-auto" disabled>
+                        Live Class
+                      </button>
+                    </div>
                   </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* ---------------- Accept Modal ---------------- */}
+        {showAcceptModal && currentRequest && (
+          <div className="modal" style={{ display: "block", backgroundColor: "rgba(0,0,0,0.5)", position: "fixed", top: 0, left: 0, width: "100%", height: "100%", zIndex: 1050 }}>
+            <div className="modal-dialog" style={{ maxWidth: "500px", margin: "100px auto" }}>
+              <div className="modal-content p-3">
+                <h5>Send message or link to student</h5>
+                <textarea
+                  className="form-control mb-3"
+                  rows={3}
+                  placeholder="Enter message or link..."
+                  value={acceptMessage}
+                  onChange={(e) => setAcceptMessage(e.target.value)}
+                />
+                <div className="d-flex justify-content-end">
+                  <button className="btn btn-secondary me-2" onClick={() => setShowAcceptModal(false)}>
+                    Cancel
+                  </button>
+                  <button className="btn btn-primary" onClick={handleAcceptSubmit}>
+                    Confirm Accept
+                  </button>
                 </div>
               </div>
             </div>
-          )}
+          </div>
+        )}
 
-        </div>
       </div>
-    </>
+    </div>
   );
 };
 
 export default TeacherDashboard;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

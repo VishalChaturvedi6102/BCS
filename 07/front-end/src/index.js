@@ -9,20 +9,17 @@ import reportWebVitals from './reportWebVitals';
 // import LoginS from './LoginS';
 
 
-import ErrorBoundary from './ErrorBoundary';
+
+// import ErrorBoundary from './ErrorBoundary';
+// <ErrorBoundary>
+//  </ErrorBoundary>
 
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
-  // <React.StrictMode>
-
-  <ErrorBoundary>
+  <React.StrictMode>
     <App />
-
-    </ErrorBoundary>
-    
-   
-  // </React.StrictMode>
+   </React.StrictMode>
 
   // {/* <Auth/> */}
   //   {/* <Calendar/> */}

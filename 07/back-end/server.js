@@ -1962,10 +1962,16 @@ const server = http.createServer(app);
 
 app.use(bodyParser.json());
 app.use(express.json());
+// app.use(cors({
+//   origin: FRONTEND_ORIGINS,
+//   credentials: true,
+// }));
+// app.use(cors());
 app.use(cors({
-  origin: FRONTEND_ORIGINS,
+  origin: "http://localhost:3000", 
   credentials: true,
 }));
+app.use(express.urlencoded({ extended: true }));
 
 // MySQL connection (promise wrapper)
 const con = mysql.createConnection({
@@ -3057,44 +3063,256 @@ app.get('/health', (req, res) => {
 
 
 
-// ---------------------------------------yaha per mera new contact tutor request ka code hai------------
+// ---------------------------------------custom courses ke routes------------
 
-app.post("/requests", (req, res) => {
-  const { studentUsername, tutorUsername, message } = req.body;
-  const sql = "INSERT INTO requests (studentUsername, tutorUsername, message) VALUES (?, ?, ?)";
-  db.query(sql, [studentUsername, tutorUsername, message], (err, result) => {
-    if (err) return res.status(500).json({ error: err });
-    res.json({ success: true, id: result.insertId });
-  });
-});
 
-app.get("/requests/student/:username", (req, res) => {
-  const sql = "SELECT * FROM requests WHERE studentUsername = ?";
-  db.query(sql, [req.params.username], (err, results) => {
-    if (err) return res.status(500).json({ error: err });
-    res.json(results);
-  });
-});
 
-app.get("/requests/tutor/:username", (req, res) => {
-  const sql = "SELECT * FROM requests WHERE tutorUsername = ?";
-  db.query(sql, [req.params.username], (err, results) => {
-    if (err) return res.status(500).json({ error: err });
-    res.json(results);
-  });
-});
+// Multer config
+// const storage = multer.diskStorage({
+//   destination: (req, file, cb) => {
+//     if (file.fieldname === 'video') cb(null, path.join(UPLOAD_BASE, 'videos'));
+//     else if (file.fieldname === 'pdfs') cb(null, path.join(UPLOAD_BASE, 'pdfs'));
+//     else cb(null, UPLOAD_BASE);
+//   },
+//   filename: (req, file, cb) => {
+//     const unique = Date.now() + '-' + Math.random().toString(36).slice(2,8);
+//     const safeName = file.originalname.replace(/\s+/g, '_').replace(/[^\w\-.]/g, '');
+//     cb(null, `${unique}-${safeName}`);
+//   }
+// });
 
-app.put("/requests/:id/:action", (req, res) => {
-  const { id, action } = req.params;
-  if (!["accept", "reject"].includes(action)) {
-    return res.status(400).json({ error: "Invalid action" });
+// const upload = multer({ storage });
+
+// Create new custom course
+// ----------------------
+// Create a new custom course
+// ----------------------
+const multerStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const videosDir = path.join(uploadsDir, 'videos');
+    const pdfsDir = path.join(uploadsDir, 'pdfs');
+    if (!fs.existsSync(videosDir)) fs.mkdirSync(videosDir, { recursive: true });
+    if (!fs.existsSync(pdfsDir)) fs.mkdirSync(pdfsDir, { recursive: true });
+    if (file.fieldname === 'video') cb(null, videosDir);
+    else if (file.fieldname === 'pdfs') cb(null, pdfsDir);
+    else cb(null, uploadsDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    cb(null, `${file.fieldname}-${uniqueSuffix}${path.extname(file.originalname)}`);
   }
-  const status = action === "accept" ? "Accepted" : "Rejected";
-  const sql = "UPDATE requests SET status = ? WHERE id = ?";
-  db.query(sql, [status, id], (err, result) => {
-    if (err) return res.status(500).json({ error: err });
-    res.json({ success: true });
-  });
+});
+
+const courseupload = multer({ storage: multerStorage });
+
+// ----------------------
+// Create a custom course
+// ----------------------
+app.post('/api/customcourses/:tutorUsername/create', courseupload.fields([
+  { name: 'video', maxCount: 1 },
+  { name: 'pdfs', maxCount: 50 }
+]), async (req, res) => {
+  try {
+    const tutorUsername = req.params.tutorUsername;
+    const { name: cname, description: bdesc, live } = req.body;
+
+    if (!tutorUsername || !cname) {
+      return res.status(400).json({ error: 'tutorUsername and course name are required' });
+    }
+
+    let videoPath = req.files?.video?.[0] ? `/uploads/videos/${req.files.video[0].filename}` : null;
+
+    // Insert course
+    const [courseResult] = await db.query(
+      `INSERT INTO custom_courses (teacherUsername, cname, bdesc, live, video)
+       VALUES (?, ?, ?, ?, ?)`,
+      [tutorUsername, cname, bdesc || null, live || null, videoPath]
+    );
+
+    const courseId = courseResult.insertId;
+
+    // Insert PDFs in order
+    const pdfFiles = req.files?.pdfs || [];
+    for (let i = 0; i < pdfFiles.length; i++) {
+      const f = pdfFiles[i];
+      await db.query(
+        `INSERT INTO course_pdfs (course_id, original_filename, file_path, sequence_index)
+         VALUES (?, ?, ?, ?)`,
+        [courseId, f.originalname, `/uploads/pdfs/${f.filename}`, i + 1]
+      );
+    }
+
+    res.status(201).json({ message: 'Custom course created', courseId });
+  } catch (err) {
+    console.error('CREATE CUSTOM COURSE ERROR:', err);
+    res.status(500).json({ error: 'Server error', details: err.message });
+  }
+});
+
+// ----------------------
+// Get all courses of a tutor
+// ----------------------
+app.get('/api/customcourses/:tutorUsername', async (req, res) => {
+  const tutorUsername = req.params.tutorUsername;
+  try {
+    const [courses] = await db.query(
+      `SELECT * FROM custom_courses WHERE teacherUsername = ?`,
+      [tutorUsername]
+    );
+    res.json({ courses });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ----------------------
+// Get a course by ID with PDFs
+// ----------------------
+app.get('/api/customcourses/course/:courseId', async (req, res) => {
+  const courseId = parseInt(req.params.courseId, 10);
+  if (!courseId) return res.status(400).json({ error: 'Invalid course id' });
+
+  try {
+    const [courses] = await db.query(
+      `SELECT * FROM custom_courses WHERE id = ?`,
+      [courseId]
+    );
+    if (courses.length === 0) return res.status(404).json({ error: 'Course not found' });
+
+    const course = courses[0];
+    const [pdfs] = await db.query(
+      `SELECT id, original_filename, file_path, sequence_index
+       FROM course_pdfs
+       WHERE course_id = ?
+       ORDER BY sequence_index ASC`,
+      [courseId]
+    );
+
+    res.json({ course, pdfs });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+
+// ----------------------------live class ke saare routes--------------
+// ---- Create a new live class request ----
+// ---- Send live class request (student) ----
+app.post('/api/liveclass/request', async (req, res) => {
+  const { studentUsername, tutorUsername, courseId, message } = req.body;
+
+  if (!studentUsername || !tutorUsername || !courseId) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  try {
+    const [existing] = await db.query(
+      'SELECT * FROM live_class_requests WHERE studentUsername = ? AND courseId = ? AND status = "pending"',
+      [studentUsername, courseId]
+    );
+
+    if (existing.length > 0) {
+      return res.status(400).json({ error: 'You already have a pending request for this course' });
+    }
+
+    const [result] = await db.query(
+      'INSERT INTO live_class_requests (studentUsername, tutorUsername, courseId, message) VALUES (?, ?, ?, ?)',
+      [studentUsername, tutorUsername, courseId, message || null]
+    );
+
+    res.status(201).json({ message: 'Request sent', requestId: result.insertId });
+  } catch (err) {
+    console.error('POST /api/liveclass/request error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ---- Get all pending requests for a teacher ----
+app.get('/api/liveclass/requests/:tutorUsername', async (req, res) => {
+  const { tutorUsername } = req.params;
+  try {
+    const [requests] = await db.query(
+      'SELECT * FROM live_class_requests WHERE tutorUsername = ? AND status = "pending"',
+      [tutorUsername]
+    );
+    res.json({ requests });
+  } catch (err) {
+    console.error('GET /api/liveclass/requests error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ---- Accept / Reject a live class request ----
+app.put('/api/liveclass/requests/:requestId', async (req, res) => {
+  const { requestId } = req.params;
+  const { status } = req.body;
+
+  if (!['accepted','rejected'].includes(status)) {
+    return res.status(400).json({ error: 'Invalid status' });
+  }
+
+  try {
+    const [result] = await db.query(
+      'UPDATE live_class_requests SET status = ? WHERE id = ?',
+      [status, requestId]
+    );
+
+    res.json({ message: `Request ${status}` });
+  } catch (err) {
+    console.error('PUT /api/liveclass/requests error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ---- Get latest request status for a student (for button state) ----
+app.get('/api/liveclass/status/:studentUsername/:courseId', async (req, res) => {
+  const { studentUsername, courseId } = req.params;
+
+  try {
+    const [rows] = await db.query(
+      'SELECT status FROM live_class_requests WHERE studentUsername = ? AND courseId = ? ORDER BY createdAt DESC LIMIT 1',
+      [studentUsername, courseId]
+    );
+
+    if (rows.length === 0) return res.json({ status: 'live' }); // default: button enabled
+    res.json({ status: rows[0].status });
+  } catch (err) {
+    console.error('GET /api/liveclass/status error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+
+app.get('/api/customcourses/course/:courseId', async (req, res) => {
+  const courseId = parseInt(req.params.courseId, 10);
+  if (!courseId) return res.status(400).json({ error: 'Invalid course id' });
+
+  try {
+    // Fetch course details
+    const [courses] = await db.query(
+      `SELECT * FROM custom_courses WHERE id = ?`,
+      [courseId]
+    );
+    if (courses.length === 0) return res.status(404).json({ error: 'Course not found' });
+
+    const course = courses[0];
+
+    // Fetch PDFs in sequence order
+    const [pdfs] = await db.query(
+      `SELECT id, original_filename, file_path, sequence_index
+       FROM course_pdfs
+       WHERE course_id = ?
+       ORDER BY sequence_index ASC`,
+      [courseId]
+    );
+
+    res.json({ course, pdfs });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
 });
 
 
@@ -3104,7 +3322,7 @@ app.put("/requests/:id/:action", (req, res) => {
 app.use((req, res) => res.status(404).json({ message: "Endpoint not found" }));
 
 // start server
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+server.listen(4000, () => console.log(`Server running on port ${PORT}`));
 
 // Export for tests if needed
 module.exports = { app, server, io, onlineStudents, onlineTeachers, activeCalls };
@@ -3195,161 +3413,3 @@ module.exports = { app, server, io, onlineStudents, onlineTeachers, activeCalls 
 
 
 
-
-
-
-
-// const onlineStudents = {}; // { username: socketId }
-
-// const roomOffers = {}; // { roomId: { sdp, sender } }
-
-// io.on("connection", (socket) => {
-//   console.log("New user connected:", socket.id);
-
-//   // 1️⃣ Student announces online status
-//   socket.on("student-online", (username) => {
-//     onlineStudents[username] = socket.id;
-//     console.log(`Student ${username} is online with socket ${socket.id}`);
-//   });
-
-//   // 2️⃣ Handle disconnects
-//   socket.on("disconnect", () => {
-//     Object.keys(onlineStudents).forEach((user) => {
-//       if (onlineStudents[user] === socket.id) delete onlineStudents[user];
-//     });
-//     socket.broadcast.emit("user-disconnected", socket.id);
-//     console.log("User disconnected:", socket.id);
-//   });
-
-//   // 3️⃣ WebRTC signaling
-//   socket.on("join-room", (roomId) => {
-//     socket.join(roomId);
-//     console.log(`User ${socket.id} joined room: ${roomId}`);
-//     socket.to(roomId).emit("user-joined", socket.id);
-
-//   });
-
-//   // socket.on("offer", (data) => {
-//   //   socket.to(data.roomId).emit("offer", {
-//   //     sdp: data.sdp,
-//   //     sender: socket.id,
-//   //   });
-//   // });
-
-//   // socket.on("answer", (data) => {
-//   //   socket.to(data.roomId).emit("answer", {
-//   //     sdp: data.sdp,
-//   //     sender: socket.id,
-//   //   });
-//   // });
-
-
-//    // 3️⃣ Join room
-//   socket.on("join-room", (roomId) => {
-//     socket.join(roomId);
-//     console.log(`User ${socket.id} joined room: ${roomId}`);
-
-//     // If an offer already exists, immediately send it to the new joiner
-//     if (roomOffers[roomId]) {
-//       socket.emit("offer", roomOffers[roomId]);
-//       console.log(`Re-sent stored offer to late joiner ${socket.id}`);
-//     }
-
-//     socket.to(roomId).emit("user-joined", socket.id);
-//   });
-
-//   // 4️⃣ Store + forward SDP offer
-//   socket.on("offer", (data) => {
-//     const offerPayload = {
-//       sdp: data.sdp,
-//       sender: socket.id,
-//       roomId: data.roomId,
-//     };
-//     roomOffers[data.roomId] = offerPayload; // ✅ Save the latest offer
-
-//     socket.to(data.roomId).emit("offer", offerPayload);
-//     console.log(`Offer stored for room ${data.roomId} from ${socket.id}`);
-//   });
-
-//   // 5️⃣ Forward SDP answer
-//   socket.on("answer", (data) => {
-//     socket.to(data.roomId).emit("answer", {
-//       sdp: data.sdp,
-//       sender: socket.id,
-//     });
-//   });
-
-
-//   socket.on("ice-candidate", (data) => {
-//     socket.to(data.roomId).emit("ice-candidate", {
-//       candidate: data.candidate,
-//       sender: socket.id,
-//     });
-//   });
-// });
-
-
-// const onlineStudents = {}; // { username: socketId }
-// const offers = {}; // { roomId: sdp }
-
-// io.on("connection", (socket) => {
-//   console.log("New user connected:", socket.id);
-
-//   // Student announces online status
-//   socket.on("student-online", (username) => {
-//     onlineStudents[username] = socket.id;
-//     console.log(`Student ${username} is online with socket ${socket.id}`);
-//   });
-
-//   // Handle disconnects
-//   socket.on("disconnect", () => {
-//     Object.keys(onlineStudents).forEach((user) => {
-//       if (onlineStudents[user] === socket.id) delete onlineStudents[user];
-//     });
-//     socket.broadcast.emit("user-disconnected", socket.id);
-//     console.log("User disconnected:", socket.id);
-//   });
-
-//   // WebRTC signaling
-//   socket.on("join-room", (roomId) => {
-//     socket.join(roomId);
-//     console.log(`User ${socket.id} joined room: ${roomId}`);
-//     socket.to(roomId).emit("user-joined", socket.id);
-
-//     // ✅ If teacher already created an offer, send it to this student immediately
-//     if (offers[roomId]) {
-//       socket.emit("offer", { sdp: offers[roomId] });
-//     }
-//   });
-
-//   socket.on("offer", (data) => {
-//     // ✅ Save teacher’s offer
-//     offers[data.roomId] = data.sdp;
-
-//     // Send it to students
-//     socket.to(data.roomId).emit("offer", {
-//       sdp: data.sdp,
-//       sender: socket.id,
-//     });
-//   });
-
-//   socket.on("answer", (data) => {
-//     socket.to(data.roomId).emit("answer", {
-//       sdp: data.sdp,
-//       sender: socket.id,
-//     });
-//   });
-
-//   socket.on("ice-candidate", (data) => {
-//     socket.to(data.roomId).emit("ice-candidate", {
-//       candidate: data.candidate,
-//       sender: socket.id,
-//     });
-//   });
-// });
-
-
-
-
-
-// --------------------------

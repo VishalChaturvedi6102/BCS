@@ -50,23 +50,23 @@ const Layout = () => {
     <>
       <Navbar expand="lg" className="bg-dark" data-bs-theme="dark">
         <Container fluid>
-          <Navbar.Brand as={Link} to="/"> Lang ++</Navbar.Brand>
+          <Navbar.Brand as={Link} to="/"> Narad</Navbar.Brand>
           <Navbar.Toggle aria-controls="navbarScroll" />
           <Navbar.Collapse id="navbarScroll">
             <Nav className="me-auto">
 
- <Nav.Link as={Link} to="/dashboard">Dashboard</Nav.Link>
+ <Nav.Link as={Link} to="/dashboard">Home</Nav.Link>
 
 
-              <Nav.Link as={Link} to="/home">Home</Nav.Link>
+              
               <Nav.Link as={Link} to="/calendar">Calendar</Nav.Link>
-              <Nav.Link as={Link} to="/newcourses">New Courses</Nav.Link>
-              <NavDropdown title="More">
+              <Nav.Link as={Link} to="/newcourses">Latest Headers</Nav.Link>
+              {/* <NavDropdown title="More">
                 <NavDropdown.Item as={Link} to="/settings">Settings</NavDropdown.Item>
                 <NavDropdown.Item as={Link} to="/registerform">Resgistration Form</NavDropdown.Item>
                 <NavDropdown.Item as={Link} to="/multiform">Multi Form</NavDropdown.Item>
 
-              </NavDropdown>
+              </NavDropdown> */}
             </Nav>
 
 
@@ -77,8 +77,8 @@ const Layout = () => {
 
 
         <Form className="d-flex">
-              <Form.Control type="search" placeholder="Search" className="me-2" />
-              <Button variant="outline-success" className="me-2">Search</Button>
+              {/* <Form.Control type="search" placeholder="Search" className="me-2" /> */}
+              {/* <Button variant="outline-success" className="me-2">Search</Button> */}
               <Button variant="danger" onClick={handleLogout}>Logout</Button>
             </Form>
 

@@ -129,7 +129,10 @@ import Tutorcard from './Tutorcard';
 // import VideoCallPage from './VideoCallPage';
 import VideoCall from './VideoCall';
 import Call from './Call';
-
+import Customcourses from './Tcomponent/Customcourses';
+import Viewcustom from './Viewcustom';
+import About from './About';
+import ContactPage from './ContactPage';
 
 function App() {
   return (
@@ -139,6 +142,8 @@ function App() {
         <Route path="/auth" element={<Auth />} />
         <Route path="/author" element={<Author />} />
         <Route path="/" element={<Frontpage />} />
+        <Route path="/About" element={<About />} />
+        <Route path="/contact" element={<ContactPage />} />
         <Route path="/tutorshow" element={<Tutorshow />} />
 
         <Route path="/call" element={<Call />} />
@@ -152,6 +157,7 @@ function App() {
           <Route path="/newcourses" element={<Newcourses />} />
           <Route path="/student-call/:roomId" element={<StudentCallpage />} />
           <Route path="/tutorcard" element={<Tutorcard />} />
+           <Route path="/viewcustom/:courseId" element={<Viewcustom />} />
 
           {/* <Route path="/videocallpage" element={<VideoCallPage />} /> */}
 
@@ -170,6 +176,8 @@ function App() {
           <Route path="/teacherprofile" element={<Teacherprofile />} />
           <Route path="/teachercalendar" element={<Teachercalendar />} />
           <Route path="/call/:roomId" element={<Callpage />} />
+          <Route path="/customcourses" element={<Customcourses />} />
+
         </Route>
       </Routes>
     </Router>
